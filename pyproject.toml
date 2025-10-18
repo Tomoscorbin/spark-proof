@@ -1,0 +1,24 @@
+[project]
+name = "spark-proof"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Tom Corbin",email = "tom_corbin1@hotmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "hypothesis==6.142.1",
+  "faker==37.11.0",
+  "pytest==8.4.2",
+  "pyspark==4.0.0"
+]
+
+[tool.poetry]
+packages = [{include = "spark_proof", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+

@@ -1,0 +1,9 @@
+# Python bytecode + caches
+__pycache__/
+*.py[cod]
+
+# Hypothesis example DB
+.hypothesis/
+
+# (optional, but you probably want these too)
+.pytest_cache/

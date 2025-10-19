@@ -47,46 +47,15 @@ def spark() -> Iterator[SparkSession]:
         .config("spark.sql.ui.retainedExecutions", "1")
         .config("spark.worker.ui.retainedExecutors", "1")
         .config("spark.worker.ui.retainedDrivers", "1")
-        #
+        .config("spark.eventLog.enabled", "false")
         .config("spark.default.parallelism", "1")
         # Disable compression (pointless on small datasets)
         .config("spark.rdd.compress", "false")
         .config("spark.shuffle.compress", "false")
-        #
         .config("spark.dynamicAllocation.enabled", "false")
         # Control the executor resources
         .config("spark.executor.cores", "1")
         .config("spark.executor.instances", "1")
-        # # fail faster if there's an issue with initial [local] conections
-        # .config("spark.network.timeout", "10000")
-        # .config("spark.executor.heartbeatInterval", "1000")
-        # # Locally, the driver shares the memory with the executors.
-        # # So best to constrain it somewhat!
-        # .config("spark.driver.memory", "2g")
-        # # Kill anything non-essential
-        # .config("spark.ui.showConsoleProgress", "false")
-        # .config("spark.ui.enabled", "false")
-        # .config("spark.ui.dagGraph.retainedRootRDDs", "1")
-        # .config("spark.ui.retainedJobs", "1")
-        # .config("spark.ui.retainedStages", "1")
-        # .config("spark.ui.retainedTasks", "1")
-        # .config("spark.sql.ui.retainedExecutions", "1")
-        # .config("spark.worker.ui.retainedExecutors", "1")
-        # .config("spark.worker.ui.retainedDrivers", "1")
-        # .config("spark.eventLog.enabled", "false")
-        # .config("spark.sql.streaming.ui.enabled", "false")
-        # .config("spark.dynamicAllocation.enabled", "false")
-        # .config("spark.shuffle.service.enabled", "false")
-        # .config("spark.speculation", "false")
-        # # Disable compression (pointless on small datasets)
-        # .config("spark.rdd.compress", "false")
-        # .config("spark.shuffle.compress", "false")
-        # # Control the executor resources
-        # .config("spark.executor.cores", "1")
-        # .config("spark.executor.instances", "1")
-        # # Avoid Hive; use in-memory catalog
-        # .config("spark.sql.catalogImplementation", "in-memory")
-        # .config("spark.sql.legacy.createHiveTableByDefault", "false")
         .getOrCreate()
     )
 

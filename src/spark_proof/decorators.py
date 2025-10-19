@@ -2,46 +2,40 @@ from pyspark.sql import SparkSession
 import pyspark.sql.types as T
 from typing import Mapping, TypeAlias
 from spark_proof.gen import Generator
-from hypothesis import given
+from hypothesis import given, settings, Phase, Verbosity, HealthCheck
 from hypothesis import strategies as st
-from typing import Callable
 
-# TODO: create a dictionary of settings and unpack them in the settings decorator!!!
+
 ColumnName: TypeAlias = str
 InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
-
-def wraps(original: Callable) -> Callable[[Callable], Callable]:
-    """Copy of functools.wraps but doesn't set __wrapped__."""
-
-    # TODO: copy actual functools.wraps code
-    # TODO: since we have used Verbosity.quiet, this is no longer needed
-    def decorate(wrapper: Callable) -> Callable:
-        for attr in ("__name__", "__qualname__", "__doc__", "__module__"):
-            try:
-                setattr(wrapper, attr, getattr(original, attr))
-            except Exception:
-                pass
-        return wrapper
-
-    return decorate
+SETTINGS = {
+    "deadline": None,  # Spark can be slow
+    "verbosity": Verbosity.quiet,  # less chatter
+    "phases": (Phase.reuse, Phase.generate, Phase.shrink),  # drop Phase.explain
+    "suppress_health_check": (HealthCheck.too_slow,),  # Spark can be slow
+}
 
 
-def _to_spark_schema(schema: InputSchema) -> T.StructType:
+def _build_spark_schema(schema: InputSchema) -> T.StructType:
     types = [(name, gen.spark_type) for name, gen in schema.items()]
     return T.StructType([T.StructField(name, t, nullable=True) for name, t in types])
 
 
-def data_frame(rows: int = 100, *, schema: InputSchema):
+def _build_rows_strategy(schema: InputSchema, max_rows: int):
     row_strategy = st.fixed_dictionaries(
         {name: gen.strategy for name, gen in schema.items()}
     )
-    rows_strategy = st.lists(row_strategy, min_size=0, max_size=rows)
-    spark_schema = _to_spark_schema(schema)
+    return st.lists(row_strategy, min_size=0, max_size=max_rows)
+
+
+def data_frame(rows: int = 100, *, schema: InputSchema):
+    rows_strategy = _build_rows_strategy(schema, max_rows=rows)
+    spark_schema = _build_spark_schema(schema)
 
     def outer(test):
         @given(rows=rows_strategy)
-        @wraps(test)
+        @settings(**SETTINGS)
         def wrapper(spark: SparkSession, *args, rows, **kwargs):
             df = spark.createDataFrame(rows, schema=spark_schema)
             return test(spark, df, *args, **kwargs)

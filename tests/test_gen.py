@@ -1,0 +1,355 @@
+import datetime as dt
+from decimal import Decimal
+
+import pytest
+from hypothesis.strategies import SearchStrategy
+import pyspark.sql.types as T
+
+from spark_proof.gen import (
+    DATE_MAX,
+    DATE_MIN,
+    Generator,
+    FLOAT32_MAX,
+    FLOAT32_MIN,
+    FLOAT64_MAX,
+    FLOAT64_MIN,
+    INT16_MAX,
+    INT16_MIN,
+    INT32_MAX,
+    INT32_MIN,
+    INT64_MAX,
+    INT64_MIN,
+    TIMESTAMP_MAX,
+    TIMESTAMP_MIN,
+    boolean,
+    date,
+    decimal,
+    double,
+    float32,
+    integer,
+    long,
+    short,
+    timestamp,
+)
+
+
+def test_returns_generator_with_integer_strategy_and_spark_type():
+    # Given a valid range
+    min_value = 1
+    max_value = 5
+
+    # When creating the generator
+    gen = integer(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.IntegerType)
+
+
+def test_raises_when_min_greater_than_max():
+    # Given an invalid range where min_value > max_value
+    min_value = 10
+    max_value = 9
+
+    # When / Then
+    with pytest.raises(ValueError):
+        integer(min_value=min_value, max_value=max_value)
+
+
+@pytest.mark.parametrize(
+    "min_value,max_value",
+    [
+        (INT32_MIN - 1, 0),  # min underflows int32
+        (0, INT32_MAX + 1),  # max overflows int32
+        (INT32_MIN - 1, INT32_MAX + 1),  # both invalid
+        (INT32_MIN - 1, INT32_MIN - 1),  # equal but invalid
+        (INT32_MAX + 1, INT32_MAX + 1),  # equal but invalid
+    ],
+)
+def test_integer_raises_when_bounds_outside_int32(min_value, max_value):
+    # Given bounds outside of int32
+    # When / Then
+    with pytest.raises(ValueError):
+        integer(min_value=min_value, max_value=max_value)
+
+
+@pytest.mark.parametrize(
+    "min_value,max_value",
+    [
+        (INT16_MIN - 1, 0),  # min underflows int16
+        (0, INT16_MAX + 1),  # max overflows int16
+        (INT16_MIN - 1, INT16_MAX + 1),  # both invalid
+        (INT16_MIN - 1, INT16_MIN - 1),  # equal but invalid
+        (INT16_MAX + 1, INT16_MAX + 1),  # equal but invalid
+    ],
+)
+def test_short_raises_when_bounds_outside_int16(min_value, max_value):
+    # Given bounds outside of int16
+    # When / Then
+    with pytest.raises(ValueError):
+        short(min_value=min_value, max_value=max_value)
+
+
+@pytest.mark.parametrize(
+    "min_value,max_value",
+    [
+        (INT64_MIN - 1, 0),  # min underflows int64
+        (0, INT64_MAX + 1),  # max overflows int64
+        (INT64_MIN - 1, INT64_MAX + 1),  # both invalid
+        (INT64_MIN - 1, INT64_MIN - 1),  # equal but invalid
+        (INT64_MAX + 1, INT64_MAX + 1),  # equal but invalid
+    ],
+)
+def test_long_raises_when_bounds_outside_int64(min_value, max_value):
+    # Given bounds outside of int64
+    # When / Then
+    with pytest.raises(ValueError):
+        long(min_value=min_value, max_value=max_value)
+
+
+def test_returns_generator_with_short_strategy_and_spark_type():
+    # Given a valid int16 range
+    min_value = -100
+    max_value = 100
+
+    # When creating the generator
+    gen = short(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.ShortType)
+
+
+def test_returns_generator_with_long_strategy_and_spark_type():
+    # Given a valid int64 range
+    min_value = INT64_MIN + 1
+    max_value = INT64_MAX - 1
+
+    # When creating the generator
+    gen = long(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.LongType)
+
+
+@pytest.mark.parametrize(
+    "min_value,max_value",
+    [
+        (FLOAT32_MIN * 2, 0.0),  # min underflows float32
+        (0.0, FLOAT32_MAX * 2),  # max overflows float32
+        (FLOAT32_MIN * 2, FLOAT32_MAX * 2),  # both invalid
+    ],
+)
+def test_float32_raises_when_bounds_outside_float32(min_value, max_value):
+    # Given bounds outside of float32
+    # When / Then
+    with pytest.raises(ValueError):
+        float32(min_value=min_value, max_value=max_value)
+
+
+def test_float32_raises_when_min_greater_than_max():
+    # Given an invalid range where min_value > max_value
+    min_value = 1.0
+    max_value = 0.0
+
+    # When / Then
+    with pytest.raises(ValueError):
+        float32(min_value=min_value, max_value=max_value)
+
+
+def test_returns_generator_with_float32_strategy_and_spark_type():
+    # Given the default float32 bounds
+    # When creating the generator
+    gen = float32()
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.FloatType)
+
+
+@pytest.mark.parametrize(
+    "min_value,max_value",
+    [
+        (FLOAT64_MIN * 2, 0.0),  # min underflows float64
+        (0.0, FLOAT64_MAX * 2),  # max overflows float64
+        (FLOAT64_MIN * 2, FLOAT64_MAX * 2),  # both invalid
+    ],
+)
+def test_double_raises_when_bounds_outside_float64(min_value, max_value):
+    # Given bounds outside of float64
+    # When / Then
+    with pytest.raises(ValueError):
+        double(min_value=min_value, max_value=max_value)
+
+
+def test_double_raises_when_min_greater_than_max():
+    # Given an invalid range where min_value > max_value
+    min_value = 1.0
+    max_value = 0.0
+
+    # When / Then
+    with pytest.raises(ValueError):
+        double(min_value=min_value, max_value=max_value)
+
+
+def test_returns_generator_with_double_strategy_and_spark_type():
+    # Given a valid float64 range
+    min_value = -1.0
+    max_value = 1.0
+
+    # When creating the generator
+    gen = double(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.DoubleType)
+
+
+def test_decimal_returns_generator_with_decimal_type():
+    # Given decimal precision and scale
+    precision = 10
+    scale = 2
+
+    # When creating the generator
+    gen = decimal(precision=precision, scale=scale)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.DecimalType)
+    assert gen.spark_type == T.DecimalType(precision, scale)
+
+
+def test_decimal_raises_when_precision_not_positive():
+    # Given precision that is not positive
+    precision = 0
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision)
+
+
+def test_decimal_raises_when_scale_exceeds_precision():
+    # Given a scale larger than the precision
+    precision = 2
+    scale = 3
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale)
+
+
+def test_decimal_raises_when_bounds_outside_precision():
+    # Given bounds outside of the representable range for the precision/scale
+    precision = 4
+    scale = 2
+    max_value = Decimal("100.00")
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, max_value=max_value)
+
+
+def test_decimal_raises_when_bounds_not_ordered():
+    # Given decimal bounds where min_value > max_value
+    precision = 4
+    scale = 2
+    min_value = Decimal("1.00")
+    max_value = Decimal("0.00")
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(
+            precision=precision,
+            scale=scale,
+            min_value=min_value,
+            max_value=max_value,
+        )
+
+
+def test_decimal_raises_when_value_has_too_many_decimal_places():
+    # Given a bound with more decimal places than allowed
+    precision = 6
+    scale = 2
+    min_value = Decimal("0.001")
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, min_value=min_value)
+
+
+def test_boolean_returns_generator_with_boolean_type():
+    # Given no explicit configuration
+    # When creating the generator
+    gen = boolean()
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.BooleanType)
+
+
+def test_date_returns_generator_with_date_type():
+    # Given a valid date range
+    min_value = DATE_MIN
+    max_value = DATE_MAX
+
+    # When creating the generator
+    gen = date(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.DateType)
+
+
+def test_date_raises_when_bounds_not_ordered():
+    # Given date bounds where min_value > max_value
+    min_value = DATE_MAX
+    max_value = DATE_MIN
+
+    # When / Then
+    with pytest.raises(ValueError):
+        date(min_value=min_value, max_value=max_value)
+
+
+def test_timestamp_returns_generator_with_timestamp_type():
+    # Given a valid timestamp range
+    min_value = TIMESTAMP_MIN
+    max_value = TIMESTAMP_MAX
+
+    # When creating the generator
+    gen = timestamp(min_value=min_value, max_value=max_value)
+
+    # Then we get the right structure and types
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.TimestampType)
+
+
+def test_timestamp_raises_when_bounds_not_ordered():
+    # Given timestamp bounds where min_value > max_value
+    min_value = dt.datetime(2020, 1, 2)
+    max_value = dt.datetime(2020, 1, 1)
+
+    # When / Then
+    with pytest.raises(ValueError):
+        timestamp(min_value=min_value, max_value=max_value)
+
+
+def test_timestamp_raises_when_timezone_aware_values_provided():
+    # Given timezone-aware bounds
+    tz_aware_min = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+    tz_aware_max = dt.datetime(2020, 1, 2, tzinfo=dt.timezone.utc)
+
+    # When / Then
+    with pytest.raises(ValueError):
+        timestamp(min_value=tz_aware_min, max_value=tz_aware_max)
+
+

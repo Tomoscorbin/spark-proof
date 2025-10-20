@@ -12,7 +12,7 @@ def rank_and_filter(
     w = Window.partitionBy(*partition_by).orderBy(*order_exprs)
     return (
         df.withColumn("_rank", F.row_number().over(w))
-        # .filter(F.col("_rank") == 1)
+        .filter(F.col("_rank") == 1)
         .drop("_rank")
     )
 

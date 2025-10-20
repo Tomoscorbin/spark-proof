@@ -6,11 +6,9 @@ import re
 from hypothesis.strategies import SearchStrategy
 from hypothesis import given, find
 import pyspark.sql.types as T
-
-from spark_proof.gen import (
+from spark_proof.core import (
     DATE_MAX,
     DATE_MIN,
-    Generator,
     FLOAT32_MAX,
     FLOAT32_MIN,
     FLOAT64_MAX,
@@ -23,6 +21,9 @@ from spark_proof.gen import (
     INT64_MIN,
     TIMESTAMP_MAX,
     TIMESTAMP_MIN,
+)
+from spark_proof.gen import (
+    Generator,
     boolean,
     date,
     decimal,

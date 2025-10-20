@@ -1,7 +1,23 @@
 import datetime as dt
 from decimal import Decimal
 from hypothesis import strategies as st
-from spark_proof.builders import (
+from spark_proof.core import (
+    INT32_MAX,
+    INT32_MIN,
+    INT16_MAX,
+    INT16_MIN,
+    INT64_MAX,
+    INT64_MIN,
+    FLOAT32_MAX,
+    FLOAT32_MIN,
+    FLOAT64_MAX,
+    FLOAT64_MIN,
+    DATE_MAX,
+    DATE_MIN,
+    TIMESTAMP_MAX,
+    TIMESTAMP_MIN,
+)
+from spark_proof.gen.builders import (
     Generator,
     build_decimal_generator,
     build_float_generator,
@@ -13,22 +29,6 @@ import re
 
 # TODO: add realistic date range
 # TODO: should validation go here or builders?
-
-# TODO: put in separaete file?
-FLOAT32_MIN = -3.4028235e38
-FLOAT32_MAX = 3.4028235e38
-FLOAT64_MIN = -1.7976931348623157e308
-FLOAT64_MAX = 1.7976931348623157e308
-INT16_MIN = -32_768
-INT16_MAX = 32_767
-INT32_MIN = -2_147_483_648
-INT32_MAX = 2_147_483_647
-INT64_MIN = -9_223_372_036_854_775_808
-INT64_MAX = 9_223_372_036_854_775_807
-DATE_MIN = dt.date.min
-DATE_MAX = dt.date.max
-TIMESTAMP_MIN = dt.datetime.min
-TIMESTAMP_MAX = dt.datetime.max
 
 
 def boolean() -> Generator:

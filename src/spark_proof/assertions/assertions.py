@@ -12,7 +12,7 @@ def assert_one_row_per_key(df: DataFrame, key_columns: Sequence[str]) -> None:
         raise ValueError(f"Missing columns in DataFrame: {missing}")
 
     counts_per_key = df.groupBy(*key_columns).count()
-    violations = counts_per_key.filter(F.col("count") > 1)
+    violations = counts_per_key.filter(F.col("count") != 1)
 
     if not violations.isEmpty():
-        raise AssertionError("One row per key violated")
+        raise AssertionError()

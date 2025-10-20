@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 import pyspark.sql.types as T
 from typing import Mapping, TypeAlias
 from spark_proof.gen import Generator
-from hypothesis import given, settings, Phase, Verbosity, HealthCheck
+from hypothesis import given, settings, Phase, Verbosity, HealthCheck, note
 from hypothesis import strategies as st
 
 
@@ -11,7 +11,7 @@ InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
 SETTINGS = {
     "deadline": None,  # Spark can be slow
-    "verbosity": Verbosity.quiet,  # less chatter
+    "verbosity": Verbosity.normal,  # less chatter
     "phases": (Phase.reuse, Phase.generate, Phase.shrink),  # drop Phase.explain
     "suppress_health_check": (HealthCheck.too_slow,),  # Spark can be slow
 }

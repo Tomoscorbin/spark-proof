@@ -181,7 +181,7 @@ def string_from_regex(
     full_match: bool = True,
 ) -> Generator:
     if isinstance(pattern, str):
-        compiled = re.compile(pattern)  # raises re.error for invalid patterns
+        compiled = re.compile(pattern)
     else:
         compiled = pattern
     strategy = st.from_regex(regex=compiled, fullmatch=full_match)

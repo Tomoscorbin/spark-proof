@@ -134,7 +134,6 @@ def date(
     return Generator(strategy=strategy, spark_type=T.DateType())
 
 
-# TODO: remove timezone for MVP
 def timestamp(
     *,
     min_value: dt.datetime = TIMESTAMP_MIN,
@@ -153,6 +152,5 @@ def timestamp(
     strategy = st.datetimes(
         min_value=min_value,
         max_value=max_value,
-        timezones=None,
     )
     return Generator(strategy=strategy, spark_type=T.TimestampType())

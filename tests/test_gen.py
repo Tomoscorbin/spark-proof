@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 from hypothesis.strategies import SearchStrategy
+from hypothesis import given, find
 import pyspark.sql.types as T
 
 from spark_proof.gen import (
@@ -284,6 +285,149 @@ def test_decimal_raises_when_value_has_too_many_decimal_places():
         decimal(precision=precision, scale=scale, min_value=min_value)
 
 
+def test_decimal_raises_when_min_outside_precision():
+    # Given a min bound below the window for DECIMAL(4,2) (window ~ [-99.99, 99.99])
+    precision = 4
+    scale = 2
+    min_value = Decimal("-100.00")
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, min_value=min_value)
+
+
+@pytest.mark.parametrize(
+    "min_raw,max_raw,scale",
+    [
+        (-1, 2, 2),  # ints
+        (0.1, 0.3, 1),  # floats aligned to one decimal place
+        (Decimal("-1.25"), Decimal("3.50"), 2),  # Decimals
+    ],
+)
+def test_decimal_accepts_int_float_and_decimal_when_aligned(min_raw, max_raw, scale):
+    # Given aligned bounds in various types
+    precision = 6
+
+    # When
+    gen = decimal(
+        precision=precision, scale=scale, min_value=min_raw, max_value=max_raw
+    )
+
+    # Then: all generated values are within bounds and aligned to scale
+    step = Decimal(1).scaleb(-scale)
+    lo = Decimal(str(min_raw)) if not isinstance(min_raw, Decimal) else min_raw
+    hi = Decimal(str(max_raw)) if not isinstance(max_raw, Decimal) else max_raw
+
+    @given(gen.strategy)
+    def _prop(v: Decimal):
+        assert lo <= v <= hi
+        assert v == v.quantize(step)
+
+    _prop()
+
+
+@pytest.mark.parametrize(
+    "bad_bound,scale",
+    [
+        (0.105, 2),  # float not aligned to 2 dp (requires _to_decimal using str())
+        (Decimal("1.001"), 2),  # Decimal not aligned
+        (-1.5, 0),  # float fractional with scale 0
+    ],
+)
+def test_decimal_rejects_bounds_when_not_aligned(bad_bound, scale):
+    # Given a misaligned bound
+    precision = 10
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, min_value=bad_bound)
+
+
+def test_decimal_handles_negative_ranges():
+    # Given a negative-only range
+    precision = 6
+    scale = 2
+    min_value = Decimal("-5.00")
+    max_value = Decimal("-1.00")
+
+    # When
+    gen = decimal(
+        precision=precision, scale=scale, min_value=min_value, max_value=max_value
+    )
+
+    # Then
+    step = Decimal("0.01")
+
+    @given(gen.strategy)
+    def _prop(v: Decimal):
+        assert min_value <= v <= max_value
+        assert v == v.quantize(step)
+
+    _prop()
+
+
+def test_decimal_handles_cross_zero_ranges():
+    # Given a range crossing zero
+    precision = 6
+    scale = 2
+    min_value = Decimal("-1.25")
+    max_value = Decimal("2.50")
+
+    # When
+    gen = decimal(
+        precision=precision, scale=scale, min_value=min_value, max_value=max_value
+    )
+
+    # Then
+    step = Decimal("0.01")
+
+    @given(gen.strategy)
+    def _prop(v: Decimal):
+        assert min_value <= v <= max_value
+        assert v == v.quantize(step)
+
+    _prop()
+
+
+def test_decimal_default_bounds_cover_type_window_endpoints():
+    # Given no user bounds for DECIMAL(4,2)
+    precision = 4
+    scale = 2
+    gen = decimal(precision=precision, scale=scale)
+
+    # Then the strategy should include both endpoints (window [-99.99, 99.99])
+    type_min = Decimal("-99.99")
+    type_max = Decimal("99.99")
+
+    # Note: if implementation computes window differently, update these two lines
+    # TODO: do not tie this to implementation
+    found_lo = find(gen.strategy, lambda x: x == type_min)
+    found_hi = find(gen.strategy, lambda x: x == type_max)
+
+    assert found_lo == type_min
+    assert found_hi == type_max
+
+
+def test_decimal_raises_on_fractional_bound_when_scale_zero():
+    # Given scale 0 and fractional bound
+    precision = 10
+    scale = 0
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, min_value=Decimal("1.5"))
+
+
+def test_decimal_rejects_negative_fractional_alignment():
+    # Given misaligned negative bound for scale=2
+    precision = 10
+    scale = 2
+
+    # When / Then
+    with pytest.raises(ValueError):
+        decimal(precision=precision, scale=scale, min_value=Decimal("-1.234"))
+
+
 def test_boolean_returns_generator_with_boolean_type():
     # Given no explicit configuration
     # When creating the generator
@@ -351,5 +495,3 @@ def test_timestamp_raises_when_timezone_aware_values_provided():
     # When / Then
     with pytest.raises(ValueError):
         timestamp(min_value=tz_aware_min, max_value=tz_aware_max)
-
-

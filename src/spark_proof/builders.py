@@ -7,9 +7,6 @@ import pyspark.sql.types as T
 
 # TODO: rename this file!
 
-# TODO: rename to numeric generator
-# TODO: consider numeric geneaator that can do float/double with pattern matching
-
 
 Width = Literal[16, 32, 64]
 
@@ -20,6 +17,26 @@ class Generator:
     spark_type: T.DataType
 
 
+@dataclass(frozen=True)
+class DecimalSpec:
+    precision: int
+    scale: int
+    type_min: Decimal
+    type_max: Decimal
+    step: Decimal
+    factor: int  # 10**scale
+
+
+@dataclass(frozen=True)
+class Bounds:
+    lo: Decimal
+    hi: Decimal
+    has_min: bool
+    has_max: bool
+
+
+# TODO: rename to numeric generator
+# TODO: consider numeric geneaator that can do float/double with pattern matching
 def build_integer_generator(
     min_value: int,
     max_value: int,
@@ -66,7 +83,6 @@ def build_float_generator(
     return Generator(strategy=strategy, spark_type=spark_type)
 
 
-# TODO: clean this function up
 def build_decimal_generator(
     *,
     precision: int,
@@ -74,50 +90,14 @@ def build_decimal_generator(
     min_value: Decimal | int | float | None = None,
     max_value: Decimal | int | float | None = None,
 ) -> Generator:
-    if not (1 <= precision <= 38):
-        raise ValueError("precision must be in [1, 38]")
-    if not (0 <= scale <= precision):
-        raise ValueError("scale must be in [0, precision]")
-
-    type_min, type_max, step = _type_window(precision, scale)
-
-    lo = type_min if min_value is None else _to_decimal(min_value)
-    hi = type_max if max_value is None else _to_decimal(max_value)
-
-    # Clamp to type window, then snap to the grid
-    # lo = _snap_min(max(lo, type_min), step)
-    # hi = _snap_max(min(hi, type_max), step)
-    if min_value is not None:
-        if lo < type_min or lo > type_max:
-            raise ValueError(
-                f"min_value {lo} outside DECIMAL({precision},{scale}) window "
-                f"[{type_min}, {type_max}]"
-            )
-        if not _is_multiple_of_step(lo, step):
-            raise ValueError(
-                f"min_value {lo} is not aligned to scale {scale} (step {step})"
-            )
-    if max_value is not None:
-        if hi < type_min or hi > type_max:
-            raise ValueError(
-                f"max_value {hi} outside DECIMAL({precision},{scale}) window "
-                f"[{type_min}, {type_max}]"
-            )
-        if not _is_multiple_of_step(hi, step):
-            raise ValueError(
-                f"max_value {hi} is not aligned to scale {scale} (step {step})"
-            )
-    if lo > hi:
-        raise ValueError("min_value must be <= max_value after alignment")
-
-    factor = 10**scale
-    lo_i = int((lo * factor).to_integral_value(rounding=ROUND_CEILING))
-    hi_i = int((hi * factor).to_integral_value(rounding=ROUND_FLOOR))
-
-    strategy = st.integers(min_value=lo_i, max_value=hi_i).map(
-        lambda n: Decimal(n).scaleb(-scale)
+    spec = _make_decimal_spec(precision, scale)
+    bounds = _coerce_bounds(spec, min_value, max_value)
+    _validate_bounds(spec, bounds)
+    lo_i, hi_i = _as_integer_window(spec, bounds)
+    strategy = _strategy_from_window(lo_i, hi_i, spec.scale)
+    return Generator(
+        strategy=strategy, spark_type=T.DecimalType(spec.precision, spec.scale)
     )
-    return Generator(strategy=strategy, spark_type=T.DecimalType(precision, scale))
 
 
 # ---------------- Helpers
@@ -145,6 +125,72 @@ def _type_window(precision: int, scale: int) -> tuple[Decimal, Decimal, Decimal]
         Decimal(10) ** (precision - scale)
     ) - step  # TODO: abstract this. meaningful function name
     return -max_abs, max_abs, step
+
+
+def _coerce_bounds(
+    spec: DecimalSpec,
+    min_value: Decimal | int | float | None,
+    max_value: Decimal | int | float | None,
+) -> Bounds:
+    has_min = min_value is not None
+    has_max = max_value is not None
+    lo = spec.type_min if min_value is None else _to_decimal(min_value)
+    hi = spec.type_max if max_value is None else _to_decimal(max_value)
+    return Bounds(lo=lo, hi=hi, has_min=has_min, has_max=has_max)
+
+
+def _make_decimal_spec(precision: int, scale: int) -> DecimalSpec:
+    if not (1 <= precision <= 38):
+        raise ValueError("precision must be in [1, 38]")
+    if not (0 <= scale <= precision):
+        raise ValueError("scale must be in [0, precision]")
+    type_min, type_max, step = _type_window(precision, scale)
+    return DecimalSpec(
+        precision=precision,
+        scale=scale,
+        type_min=type_min,
+        type_max=type_max,
+        step=step,
+        factor=10**scale,
+    )
+
+
+def _validate_bounds(spec: DecimalSpec, b: Bounds) -> None:
+    # window check (only for user-supplied bounds)
+    if b.has_min and not (spec.type_min <= b.lo <= spec.type_max):
+        raise ValueError(
+            f"min_value {b.lo} outside DECIMAL({spec.precision},{spec.scale}) "
+            f"window [{spec.type_min}, {spec.type_max}]"
+        )
+    if b.has_max and not (spec.type_min <= b.hi <= spec.type_max):
+        raise ValueError(
+            f"max_value {b.hi} outside DECIMAL({spec.precision},{spec.scale}) "
+            f"window [{spec.type_min}, {spec.type_max}]"
+        )
+    # alignment to scale
+    if b.has_min and not _is_multiple_of_step(b.lo, spec.step):
+        raise ValueError(
+            f"min_value {b.lo} is not aligned to scale {spec.scale} (step {spec.step})"
+        )
+    if b.has_max and not _is_multiple_of_step(b.hi, spec.step):
+        raise ValueError(
+            f"max_value {b.hi} is not aligned to scale {spec.scale} (step {spec.step})"
+        )
+    # order
+    if b.lo > b.hi:
+        raise ValueError("min_value must be <= max_value after alignment")
+
+
+def _as_integer_window(spec: DecimalSpec, b: Bounds) -> tuple[int, int]:
+    lo_i = int((b.lo * spec.factor).to_integral_value(rounding=ROUND_CEILING))
+    hi_i = int((b.hi * spec.factor).to_integral_value(rounding=ROUND_FLOOR))
+    return lo_i, hi_i
+
+
+def _strategy_from_window(lo_i: int, hi_i: int, scale: int):
+    return st.integers(min_value=lo_i, max_value=hi_i).map(
+        lambda n: Decimal(n).scaleb(-scale)
+    )
 
 
 def _is_multiple_of_step(x: Decimal, step: Decimal) -> bool:

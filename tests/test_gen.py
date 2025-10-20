@@ -2,6 +2,7 @@ import datetime as dt
 from decimal import Decimal
 
 import pytest
+import re
 from hypothesis.strategies import SearchStrategy
 from hypothesis import given, find
 import pyspark.sql.types as T
@@ -31,6 +32,8 @@ from spark_proof.gen import (
     long,
     short,
     timestamp,
+    string,
+    string_from_regex,
 )
 
 
@@ -495,3 +498,125 @@ def test_timestamp_raises_when_timezone_aware_values_provided():
     # When / Then
     with pytest.raises(ValueError):
         timestamp(min_value=tz_aware_min, max_value=tz_aware_max)
+
+
+def test_string_returns_generator_with_string_type():
+    # Given valid bounds
+    gen = string(min_size=0, max_size=5)
+
+    # Then wrapper and Spark type are correct
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.StringType)
+
+
+def test_string_raises_when_min_size_negative():
+    # Given an invalid lower bound
+    # When / Then
+    with pytest.raises(ValueError):
+        string(min_size=-1, max_size=0)
+
+
+def test_string_raises_when_max_less_than_min():
+    # Given reversed bounds
+    # When / Then
+    with pytest.raises(ValueError):
+        string(min_size=5, max_size=4)
+
+
+def test_string_inclusive_length_bounds():
+    # Given inclusive bounds
+    gen = string(min_size=2, max_size=4)
+
+    # Then endpoints are attainable
+    assert len(find(gen.strategy, lambda s: len(s) == 2)) == 2
+    assert len(find(gen.strategy, lambda s: len(s) == 4)) == 4
+
+
+def test_string_singleton_length():
+    # Given min == max
+    gen = string(min_size=3, max_size=3)
+
+    # Then all draws have exact length
+    @given(gen.strategy)
+    def _prop(s: str):
+        assert len(s) == 3
+        assert isinstance(s, str)
+
+    _prop()
+
+
+def test_string_zero_length_only_generates_empty():
+    # Given zero-length only
+    gen = string(min_size=0, max_size=0)
+
+    # Then empty string is the only value
+    s = gen.strategy.example()  # TODO: should we use exanple() or given()?
+    assert s == ""
+
+    @given(gen.strategy)
+    def _prop(x: str):
+        assert x == ""
+
+    _prop()
+
+
+def test_string_unbounded_upper_can_reach_target_length():
+    # Given no max_size
+    gen = string(min_size=0, max_size=None)
+
+    # Then we can find a string of a specific length (e.g., 10)
+    target = 10
+    found = find(gen.strategy, lambda s: len(s) == target)
+    assert len(found) == target
+
+
+def test_string_from_regex_returns_generator_with_string_type():
+    # Given a simple pattern
+    gen = string_from_regex(pattern=r"[A-Z]{2}\d{3}", full_match=True)
+
+    # Then wrapper and Spark type are correct
+    assert isinstance(gen, Generator)
+    assert isinstance(gen.strategy, SearchStrategy)
+    assert isinstance(gen.spark_type, T.StringType)
+
+
+def test_string_from_regex_search_mode_contains_match():
+    # Given search (not full-match)
+    gen = string_from_regex(pattern=r"\d+", full_match=False)
+
+    # Then result contains a matching substring
+    pat = re.compile(r"\d+")
+
+    @given(gen.strategy)
+    def _prop(s: str):
+        assert pat.search(s)
+
+    _prop()
+
+
+def test_string_from_regex_dot_fullmatch_produces_single_codepoint():
+    # Given '.' with full-match (equivalent to anchoring \A.\Z)
+    gen = string_from_regex(pattern=r".", full_match=True)
+
+    # Then every draw is exactly one codepoint
+    @given(gen.strategy)
+    def _prop(s: str):
+        assert len(s) == 1
+
+    _prop()
+
+
+def test_string_from_regex_nullable_pattern_can_be_empty():
+    # Given a pattern that can match empty
+    gen = string_from_regex(pattern=r"a*", full_match=True)
+
+    # Then empty string is a valid (and shrunk) example
+    assert find(gen.strategy, lambda s: s == "") == ""
+
+
+def test_string_from_regex_invalid_pattern_raises():
+    # Given an invalid regex
+    # When / Then: Python's re will raise on compile inside Hypothesis
+    with pytest.raises(re.error):
+        string_from_regex(pattern="(")  # unbalanced parenthesis

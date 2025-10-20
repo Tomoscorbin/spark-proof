@@ -8,7 +8,11 @@ from spark_proof.builders import (
     build_integer_generator,
 )
 import pyspark.sql.types as T
+from typing import Pattern
+import re
 
+# TODO: add realistic date range
+# TODO: should validation go here or builders?
 
 # TODO: put in separaete file?
 FLOAT32_MIN = -3.4028235e38
@@ -123,8 +127,8 @@ def date(
         raise ValueError("min_value must be <= max_value")
     if min_value < DATE_MIN or max_value > DATE_MAX:
         raise ValueError(
-            f"date() bounds must be within [{DATE_MIN}, {DATE_MAX}] but got "
-            f"[{min_value}, {max_value}]"
+            f"date() bounds must be within [{DATE_MIN}, {DATE_MAX}] but got"
+            f" [{min_value}, {max_value}]"
         )
 
     strategy = st.dates(
@@ -145,8 +149,8 @@ def timestamp(
         raise ValueError("min_value must be <= max_value")
     if min_value < TIMESTAMP_MIN or max_value > TIMESTAMP_MAX:
         raise ValueError(
-            f"timestamp() bounds must be within [{TIMESTAMP_MIN}, {TIMESTAMP_MAX}] but got "
-            f"[{min_value}, {max_value}]"
+            f"timestamp() bounds must be within [{TIMESTAMP_MIN}, {TIMESTAMP_MAX}] but got"
+            f" [{min_value}, {max_value}]"
         )
 
     strategy = st.datetimes(
@@ -154,3 +158,31 @@ def timestamp(
         max_value=max_value,
     )
     return Generator(strategy=strategy, spark_type=T.TimestampType())
+
+
+# TODO: figure out how to apply alphabet
+def string(
+    *,
+    min_size: int = 0,
+    max_size: int | None,
+) -> Generator:
+    if min_size < 0:
+        raise ValueError("min_length must be >= 0")
+    if max_size is not None and max_size < min_size:
+        raise ValueError("max_length must be >= min_length")
+
+    strategy = st.text(min_size=min_size, max_size=max_size)
+    return Generator(strategy=strategy, spark_type=T.StringType())
+
+
+def string_from_regex(
+    *,
+    pattern: str | Pattern[str],
+    full_match: bool = True,
+) -> Generator:
+    if isinstance(pattern, str):
+        compiled = re.compile(pattern)  # raises re.error for invalid patterns
+    else:
+        compiled = pattern
+    strategy = st.from_regex(regex=compiled, fullmatch=full_match)
+    return Generator(strategy=strategy, spark_type=T.StringType())

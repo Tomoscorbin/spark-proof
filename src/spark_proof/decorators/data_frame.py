@@ -35,12 +35,6 @@ def _build_rows_strategy(schema: InputSchema, max_rows: int):
 
 def _resolve_session(session: str | SessionProvider | SparkSession, request) -> SparkSession:
     if isinstance(session, str):
-        if request is None:
-            raise RuntimeError(
-                "No pytest request available to resolve fixture '"
-                + session
-                + "'. Either run under pytest with that fixture defined, or pass session=<callable|SparkSession>."
-            )
         try:
             return request.getfixturevalue(session)
         except Exception as e:
@@ -66,7 +60,7 @@ def data_frame(
     def outer(test):
         @given(rows=rows_strategy)
         @settings(**SETTINGS)
-        def wrapper(request=None, *args, rows, **kwargs):
+        def wrapper(request, *args, rows, **kwargs):
             spark = _resolve_session(session, request)
             df = spark.createDataFrame(rows, schema=spark_schema)
             # Only pass the DataFrame to the user's test

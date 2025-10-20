@@ -23,6 +23,6 @@ def rank_and_filter(
         "date": sp.date(),
     }
 )
-def test_rank_and_filter(spark, df):
+def test_rank_and_filter(df):
     actual = rank_and_filter(df, ["customer"], ["date"])
     sp.assert_one_row_per_key(actual, ["customer"])

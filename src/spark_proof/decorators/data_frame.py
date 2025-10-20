@@ -1,8 +1,8 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.types as T
-from typing import Mapping, TypeAlias
+from typing import Mapping, TypeAlias, Callable
 from spark_proof.gen import Generator
-from hypothesis import given, settings, Phase, Verbosity, HealthCheck, note
+from hypothesis import given, settings, Phase, Verbosity, HealthCheck
 from hypothesis import strategies as st
 
 
@@ -11,10 +11,13 @@ InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
 SETTINGS = {
     "deadline": None,  # Spark can be slow
-    "verbosity": Verbosity.normal,  # less chatter
+    "verbosity": Verbosity.quiet,  # less chatter
     "phases": (Phase.reuse, Phase.generate, Phase.shrink),  # drop Phase.explain
     "suppress_health_check": (HealthCheck.too_slow,),  # Spark can be slow
 }
+
+
+SessionProvider = Callable[[], SparkSession]
 
 
 def _build_spark_schema(schema: InputSchema) -> T.StructType:
@@ -29,17 +32,41 @@ def _build_rows_strategy(schema: InputSchema, max_rows: int):
     return st.lists(row_strategy, min_size=0, max_size=max_rows)
 
 
-def data_frame(rows: int = 100, *, schema: InputSchema):
+
+def _resolve_session(session: str | SessionProvider | SparkSession, request) -> SparkSession:
+    if isinstance(session, str):
+        try:
+            return request.getfixturevalue(session)
+        except Exception as e:
+            raise RuntimeError(
+                "Could not obtain SparkSession from pytest fixture "
+                f"'{session}'. Define that fixture, pass session='<fixture-name>', "
+                "pass a Session provider, or pass a SparkSession instance."
+            ) from e
+    if callable(session):
+        return session()
+    return session
+
+
+def data_frame(
+    rows: int = 100,
+    *,
+    schema: InputSchema,
+    session: str | SessionProvider | SparkSession = "spark",
+):
     rows_strategy = _build_rows_strategy(schema, max_rows=rows)
     spark_schema = _build_spark_schema(schema)
 
     def outer(test):
         @given(rows=rows_strategy)
         @settings(**SETTINGS)
-        def wrapper(spark: SparkSession, *args, rows, **kwargs):
+        def wrapper(request, *args, rows, **kwargs):
+            spark = _resolve_session(session, request)
             df = spark.createDataFrame(rows, schema=spark_schema)
-            return test(spark, df, *args, **kwargs)
+            # Only pass the DataFrame to the user's test
+            return test(df, *args, **kwargs)
 
         return wrapper
 
     return outer
+

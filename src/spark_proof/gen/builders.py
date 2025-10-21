@@ -35,8 +35,6 @@ class Bounds:
     has_max: bool
 
 
-# TODO: rename to numeric generator
-# TODO: consider numeric geneaator that can do float/double with pattern matching
 def build_integer_generator(
     min_value: int,
     max_value: int,

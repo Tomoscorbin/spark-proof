@@ -2,14 +2,14 @@ from pyspark.sql import SparkSession
 import pyspark.sql.types as T
 from typing import Mapping, TypeAlias
 from spark_proof.gen import Generator
-from hypothesis import given, settings, Phase, Verbosity, HealthCheck
+from hypothesis import given, settings, Phase, Verbosity, HealthCheck, note
 from hypothesis import strategies as st
 from pytest import FixtureRequest
 
 
 SETTINGS = {
     "deadline": None,  # Spark can be slow
-    "verbosity": Verbosity.quiet,  # less chatter
+    "verbosity": Verbosity.normal,
     "phases": (Phase.reuse, Phase.generate, Phase.shrink),  # drop Phase.explain
     "suppress_health_check": (HealthCheck.too_slow,),  # Spark can be slow
 }
@@ -27,17 +27,18 @@ def data_frame(
     rows_strategy = _build_rows_strategy(schema, max_rows=rows)
     spark_schema = _build_spark_schema(schema)
 
-    def outer(test_function):
+    def decorate_with_dataframe(test_function):
         @given(rows=rows_strategy)
         @settings(**SETTINGS)
-        def wrapper(request, *args, rows, **kwargs):
+        def run_with_generated_dataframe(request, *args, rows, **kwargs):
             spark = _resolve_session(session, request)
             df = spark.createDataFrame(rows, schema=spark_schema)
+            note(f"Failing rows (shrunk minimal example): {rows}")
             return test_function(df, *args, **kwargs)
 
-        return wrapper
+        return run_with_generated_dataframe
 
-    return outer
+    return decorate_with_dataframe
 
 
 # --------------- Helpers
@@ -66,4 +67,3 @@ def _resolve_session(
             f"Could not obtain SparkSession from pytest fixture '{session}'."
             " Ensure you're running under pytest with a SparkSession fixture."
         ) from e
-

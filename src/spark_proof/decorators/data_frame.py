@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.types as T
-from typing import Mapping, TypeAlias, Callable
+from typing import Mapping, TypeAlias
 from spark_proof.gen import Generator
 from hypothesis import given, settings, Phase, Verbosity, HealthCheck
 from hypothesis import strategies as st
@@ -15,7 +15,7 @@ SETTINGS = {
 
 ColumnName: TypeAlias = str
 InputSchema: TypeAlias = Mapping[ColumnName, Generator]
-SessionProvider = Callable[[], SparkSession]
+
 
 
 def _build_spark_schema(schema: InputSchema) -> T.StructType:
@@ -31,28 +31,23 @@ def _build_rows_strategy(schema: InputSchema, max_rows: int):
 
 
 def _resolve_session(
-    session: str | SessionProvider | SparkSession,
+    session: str,
     request,
 ) -> SparkSession:
-    if isinstance(session, str):
-        try:
-            return request.getfixturevalue(session)
-        except Exception as e:
-            raise RuntimeError(
-                "Could not obtain SparkSession from pytest fixture"
-                f" '{session}'. Define that fixture, pass session='<fixture-name>', "
-                " pass a Session provider, or pass a SparkSession instance."
-            ) from e
-    if callable(session):
-        return session()
-    return session
+    try:
+        return request.getfixturevalue(session)
+    except Exception as e:
+        raise RuntimeError(
+            "Could not obtain SparkSession from pytest fixture"
+            f" '{session}'. Ensure you're running under pytest with a SparkSession fixture."
+        ) from e
 
 
 def data_frame(
     rows: int = 100,
     *,
     schema: InputSchema,
-    session: str | SessionProvider | SparkSession = "spark",
+    session: str = "spark",
 ):
     rows_strategy = _build_rows_strategy(schema, max_rows=rows)
     spark_schema = _build_spark_schema(schema)

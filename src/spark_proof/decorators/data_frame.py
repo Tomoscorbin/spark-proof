@@ -6,9 +6,6 @@ from hypothesis import given, settings, Phase, Verbosity, HealthCheck
 from hypothesis import strategies as st
 
 
-ColumnName: TypeAlias = str
-InputSchema: TypeAlias = Mapping[ColumnName, Generator]
-
 SETTINGS = {
     "deadline": None,  # Spark can be slow
     "verbosity": Verbosity.quiet,  # less chatter
@@ -16,7 +13,8 @@ SETTINGS = {
     "suppress_health_check": (HealthCheck.too_slow,),  # Spark can be slow
 }
 
-
+ColumnName: TypeAlias = str
+InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 SessionProvider = Callable[[], SparkSession]
 
 
@@ -32,16 +30,18 @@ def _build_rows_strategy(schema: InputSchema, max_rows: int):
     return st.lists(row_strategy, min_size=0, max_size=max_rows)
 
 
-
-def _resolve_session(session: str | SessionProvider | SparkSession, request) -> SparkSession:
+def _resolve_session(
+    session: str | SessionProvider | SparkSession,
+    request,
+) -> SparkSession:
     if isinstance(session, str):
         try:
             return request.getfixturevalue(session)
         except Exception as e:
             raise RuntimeError(
-                "Could not obtain SparkSession from pytest fixture "
-                f"'{session}'. Define that fixture, pass session='<fixture-name>', "
-                "pass a Session provider, or pass a SparkSession instance."
+                "Could not obtain SparkSession from pytest fixture"
+                f" '{session}'. Define that fixture, pass session='<fixture-name>', "
+                " pass a Session provider, or pass a SparkSession instance."
             ) from e
     if callable(session):
         return session()
@@ -63,10 +63,8 @@ def data_frame(
         def wrapper(request, *args, rows, **kwargs):
             spark = _resolve_session(session, request)
             df = spark.createDataFrame(rows, schema=spark_schema)
-            # Only pass the DataFrame to the user's test
             return test(df, *args, **kwargs)
 
         return wrapper
 
     return outer
-

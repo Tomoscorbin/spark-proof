@@ -18,31 +18,6 @@ ColumnName: TypeAlias = str
 InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
 
-def _build_spark_schema(schema: InputSchema) -> T.StructType:
-    types = [(name, gen.spark_type) for name, gen in schema.items()]
-    return T.StructType([T.StructField(name, t, nullable=True) for name, t in types])
-
-
-def _build_rows_strategy(schema: InputSchema, max_rows: int):
-    row_strategy = st.fixed_dictionaries(
-        {name: gen.strategy for name, gen in schema.items()}
-    )
-    return st.lists(row_strategy, min_size=0, max_size=max_rows)
-
-
-def _resolve_session(
-    session: str,
-    request: FixtureRequest,
-) -> SparkSession:
-    try:
-        return request.getfixturevalue(session)
-    except Exception as e:
-        raise RuntimeError(
-            "Could not obtain SparkSession from pytest fixture"
-            f" '{session}'. Ensure you're running under pytest with a SparkSession fixture."
-        ) from e
-
-
 def data_frame(
     rows: int = 100,
     *,
@@ -63,3 +38,32 @@ def data_frame(
         return wrapper
 
     return outer
+
+
+# --------------- Helpers
+
+
+def _build_spark_schema(schema: InputSchema) -> T.StructType:
+    types = [(name, gen.spark_type) for name, gen in schema.items()]
+    return T.StructType([T.StructField(name, t, nullable=True) for name, t in types])
+
+
+def _build_rows_strategy(schema: InputSchema, max_rows: int):
+    row_strategy = st.fixed_dictionaries(
+        {name: gen.strategy for name, gen in schema.items()}
+    )
+    return st.lists(row_strategy, min_size=0, max_size=max_rows)
+
+
+def _resolve_session(
+    session: str,
+    request: FixtureRequest,
+) -> SparkSession:
+    try:
+        return request.getfixturevalue(session)
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not obtain SparkSession from pytest fixture '{session}'."
+            " Ensure you're running under pytest with a SparkSession fixture."
+        ) from e
+

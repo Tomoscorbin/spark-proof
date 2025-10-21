@@ -52,13 +52,13 @@ def data_frame(
     rows_strategy = _build_rows_strategy(schema, max_rows=rows)
     spark_schema = _build_spark_schema(schema)
 
-    def outer(test):
+    def outer(test_function):
         @given(rows=rows_strategy)
         @settings(**SETTINGS)
         def wrapper(request, *args, rows, **kwargs):
             spark = _resolve_session(session, request)
             df = spark.createDataFrame(rows, schema=spark_schema)
-            return test(df, *args, **kwargs)
+            return test_function(df, *args, **kwargs)
 
         return wrapper
 

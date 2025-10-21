@@ -4,6 +4,7 @@ from typing import Mapping, TypeAlias
 from spark_proof.gen import Generator
 from hypothesis import given, settings, Phase, Verbosity, HealthCheck
 from hypothesis import strategies as st
+from pytest import FixtureRequest
 
 
 SETTINGS = {
@@ -15,7 +16,6 @@ SETTINGS = {
 
 ColumnName: TypeAlias = str
 InputSchema: TypeAlias = Mapping[ColumnName, Generator]
-
 
 
 def _build_spark_schema(schema: InputSchema) -> T.StructType:
@@ -32,7 +32,7 @@ def _build_rows_strategy(schema: InputSchema, max_rows: int):
 
 def _resolve_session(
     session: str,
-    request,
+    request: FixtureRequest,
 ) -> SparkSession:
     try:
         return request.getfixturevalue(session)

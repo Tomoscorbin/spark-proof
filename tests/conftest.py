@@ -24,20 +24,11 @@ def spark() -> Iterator[SparkSession]:
     spark = (
         SparkSession.builder.master("local[1]")
         .appName("spark-proof-tests")
-        # Small amounts of data in tests so no need for more than 1 CPU
-        # More CPUs would actually require more overhead in this instance.
         .master("local[1]")
-        # fail faster if there's an issue with initial [local] conections
         .config("spark.network.timeout", "10000")
         .config("spark.executor.heartbeatInterval", "1000")
-        # Locally, the driver shares the memory with the executors.
-        # So best to constrain it somewhat!
         .config("spark.driver.memory", "2g")
-        # Default partitions is 200 which is good for _big data_. The shuffle
-        # overhead for our small, test data sets will be more expensive than the
-        # computation.
         .config("spark.sql.shuffle.partitions", "1")
-        # No need for any UI components, or keeping history
         .config("spark.ui.showConsoleProgress", "false")
         .config("spark.ui.enabled", "false")
         .config("spark.ui.dagGraph.retainedRootRDDs", "1")
@@ -49,11 +40,9 @@ def spark() -> Iterator[SparkSession]:
         .config("spark.worker.ui.retainedDrivers", "1")
         .config("spark.eventLog.enabled", "false")
         .config("spark.default.parallelism", "1")
-        # Disable compression (pointless on small datasets)
         .config("spark.rdd.compress", "false")
         .config("spark.shuffle.compress", "false")
         .config("spark.dynamicAllocation.enabled", "false")
-        # Control the executor resources
         .config("spark.executor.cores", "1")
         .config("spark.executor.instances", "1")
         .getOrCreate()

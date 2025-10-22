@@ -8,7 +8,7 @@ Property-based testing (PBT) checks that **general rules** always hold.
 For data engineering, this difference is important.  
 Example tests might prove that one sample dataset works; PBT proves that your logic is correct for *all* datasets within realistic bounds.
 
-> If you’re new to property-based testing, [this series by Scott Wlaschin](https://fsharpforfunandprofit.com/series/property-based-testing/) gives a great introductions.
+> If you’re new to property-based testing, [this series by Scott Wlaschin](https://fsharpforfunandprofit.com/series/property-based-testing/) gives a great introduction.
 ---
 
 ## What PBT Brings to ETL and Big Data

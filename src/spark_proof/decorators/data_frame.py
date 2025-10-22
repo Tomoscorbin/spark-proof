@@ -19,12 +19,12 @@ InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
 
 def data_frame(
-    rows: int = 100, # TODO: rename to max_rows
+    max_rows: int = 100, 
     *,
     schema: InputSchema,
     session: str = "spark",
 ):
-    rows_strategy = _build_rows_strategy(schema, max_rows=rows)
+    rows_strategy = _build_rows_strategy(schema, max_rows=max_rows)
     spark_schema = _build_spark_schema(schema)
 
     def decorate_with_dataframe(test_function):

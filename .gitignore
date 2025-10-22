@@ -7,3 +7,6 @@ __pycache__/
 
 # (optional, but you probably want these too)
 .pytest_cache/
+
+# Codex
+AGENTS.md

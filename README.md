@@ -2,6 +2,9 @@
 
 Spark Proof is a property based testing toolkit for PySpark data pipelines. It wraps Hypothesis so that you can generate large and varied DataFrame samples with minimal boilerplate while staying in the familiar pytest workflow. Use it to harden data transformations, catch edge cases that example based tests miss, and keep confidence high as your pipeline evolves.
 
+For more on how property-based testing applies to ETL and data pipelines,
+see [Property-Based Testing for Data Pipelines](docs/property_based_testing_for_data_pipelines.md).
+
 ## Why property based testing helps big data teams
 
 Working with data at scale makes it impossible to reason about every possible input manually. Property based testing flips the mindset: instead of writing one or two fixtures, you describe the rules your pipeline must respect. Spark Proof generates many random examples, automatically shrinks any failing case to the smallest counter example, and makes it straightforward to replay and debug the issue. The result is faster feedback and fewer production surprises.

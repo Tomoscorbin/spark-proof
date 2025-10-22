@@ -19,7 +19,7 @@ InputSchema: TypeAlias = Mapping[ColumnName, Generator]
 
 
 def data_frame(
-    rows: int = 100,
+    rows: int = 100, # TODO: rename to max_rows
     *,
     schema: InputSchema,
     session: str = "spark",

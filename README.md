@@ -41,7 +41,7 @@ def test_customer_pipeline_enforces_unique_ids(df):
     sp.assert_one_row_per_key(result, ["customer_id"])
 ```
 
-When the property fails Hypothesis prints the smallest counter example and the generated rows so that you can reproduce the bug quickly.
+When the property fails Hypothesis prints the smallest counter example and the generated rows so that you can reproduce the bug.
 
 ## Generating rich data sets
 

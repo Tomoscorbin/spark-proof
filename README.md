@@ -24,7 +24,6 @@ Working with data at scale makes it impossible to reason about every possible in
 Below is a test that verifies a transformation never produces duplicate customer records. The decorator handles DataFrame creation while you assert the property you care about.
 
 ```python
-import pyspark.sql.functions as F
 import spark_proof as sp
 
 @sp.data_frame(

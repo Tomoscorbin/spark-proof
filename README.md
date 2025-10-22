@@ -7,7 +7,7 @@ see [Property-Based Testing for Data Pipelines](docs/pbt_for_data_pipelines.md).
 
 ## Why property based testing helps big data teams
 
-Working with data at scale makes it impossible to reason about every possible input manually. Property based testing flips the mindset: instead of writing one or two fixtures, you describe the rules your pipeline must respect. Spark Proof generates many random examples, automatically shrinks any failing case to the smallest counter example, and makes it straightforward to replay and debug the issue. The result is faster feedback and fewer production surprises.
+Working with data at scale makes it impossible to reason about every possible input manually. Property based testing flips the mindset: instead of writing a few specific examples, you describe the rules your pipeline must respect. Spark Proof generates many random examples, automatically shrinks any failing case to the smallest counter example, and makes it straightforward to replay and debug the issue. The result is faster feedback and fewer production surprises.
 
 ## Key features
 

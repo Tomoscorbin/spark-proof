@@ -21,7 +21,7 @@ Example tests might prove that one sample dataset works; PBT proves that your lo
 | **Debuggable failures** | When a property fails, the test framework automatically "shrinks" the data to the smallest example that still reproduces the failure. You get a tiny handful of rows that expose the issue. This makes failure analysis fast and keeps test feedback loops tight. |
 | **Broader coverage** | Property-based tests don't try to simulate production scale, but they do exercise a wider variety of data than hand-written tests can. Because thousands of different datasets are explored automatically, you're far more likely to catch incorrect logic or incorrect assumptions about the data. |
 | **Aligns with data quality principles** | The invariants you test in PBT - schema validity, key uniqueness, referential integrity, deterministic transformations - are the same principles that underpin good data-quality practice. In other words, property-based tests let you assert the same or similar rules that you'd monitor in production, but at the code level. This creates a clean bridge between data-quality assurance and automated testing. |
-
+| **Serves as documentation** | Good tests explain why the code exists and what guarantees it provides. Property-based tests take this a step further by  expressing the fundamental truths about your data logic in a way that’s both human-readable and machine-verifiable. This makes your ETL system self-describing and easier to reason about. |
 
 ---
 

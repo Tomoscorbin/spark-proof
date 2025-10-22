@@ -28,7 +28,6 @@ import pyspark.sql.functions as F
 import spark_proof as sp
 
 @sp.data_frame(
-    rows=500,
     schema={
         "customer_id": sp.integer(min_value=1, max_value=1_000_000),
         "signup_date": sp.date(),

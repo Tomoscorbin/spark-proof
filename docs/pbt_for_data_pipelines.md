@@ -1,6 +1,6 @@
 # Property-Based Testing for Data Pipelines
 
-## Why Property-Based Testing Matters
+## Why Property-Based Testing?
 
 Traditional tests check that **specific examples** work.  
 Property-based testing (PBT) checks that **general rules** always hold.

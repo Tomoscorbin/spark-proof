@@ -26,16 +26,16 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 
 ## Testable ETL Properties
 
-| Property Type | Example Properties | Related Data-Quality Dimension |
-|-----------|--------------------|-------------------------------|
-| **Schema contracts** | The output schema matches the declared specification. All columns have valid data types, expected nullability, and precision or scale constraints. Extra or missing columns are detected. | *Validity* |
-| **Key uniqueness** | For any natural key or unique identifier, the resulting dataset contains no duplicates. Where duplicates are present in the source, the transformation defines a clear and deterministic rule for resolution. | *Uniqueness* |
-| **Referential integrity** | Relationships between datasets remain consistent. Joins do not multiply rows unexpectedly, missing foreign keys are handled predictably, and parent/child links remain valid. | *Consistency* |
-| **Aggregation invariants** | Aggregations, groupings, or rollups produce stable results regardless of how data is chunked, partitioned, or ordered. Partial aggregations followed by unions are equivalent to a single global aggregation. | *Accuracy* |
-| **Domain and range constraints** | Values fall within valid, expected ranges or enumerations. Outliers, invalid categories, and impossible values (e.g. negative quantities or future timestamps) are either cleaned, imputed, or rejected according to defined rules. | *Validity* |
-| **Idempotence** | Running the same transformation multiple times with identical input yields the same result. Duplicate ingestion or reruns do not introduce new or inconsistent data. | *Consistency* |
-| **Temporal and sequential correctness** | Any ordering, windowing, or stateful logic behaves deterministically across time. For example, "latest per key", "earliest event", or "rolling window" rules always produce consistent, non-contradictory outcomes. | *Accuracy* |
-| **Completeness and presence** | All mandatory fields and expected entities appear in the output. Optional fields obey nullability rules, and missing data is flagged or filled according to defined policy. | *Completeness* |
+| Property Type | Example Properties |
+|-----------|--------------------|
+| **Schema contracts** | The output schema matches the declared specification. All columns have valid data types, expected nullability, and precision or scale constraints. Extra or missing columns are detected. |
+| **Key uniqueness** | For any natural key or unique identifier, the resulting dataset contains no duplicates. Where duplicates are present in the source, the transformation defines a clear and deterministic rule for resolution. | 
+| **Referential integrity** | Relationships between datasets remain consistent. Joins do not multiply rows unexpectedly, missing foreign keys are handled predictably, and parent/child links remain valid. |
+| **Aggregation invariants** | Aggregations, groupings, or rollups produce stable results regardless of how data is chunked, partitioned, or ordered. Partial aggregations followed by unions are equivalent to a single global aggregation. |
+| **Domain and range constraints** | Values fall within valid, expected ranges or enumerations. Outliers, invalid categories, and impossible values (e.g. negative quantities or future timestamps) are either cleaned, imputed, or rejected according to defined rules. |
+| **Idempotence** | Running the same transformation multiple times with identical input yields the same result. Duplicate ingestion or reruns do not introduce new or inconsistent data. |
+| **Temporal and sequential correctness** | Any ordering, windowing, or stateful logic behaves deterministically across time. For example, "latest per key", "earliest event", or "rolling window" rules always produce consistent, non-contradictory outcomes. |
+| **Completeness and presence** | All mandatory fields and expected entities appear in the output. Optional fields obey nullability rules, and missing data is flagged or filled according to defined policy. |
 
 ---
 

@@ -26,10 +26,10 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 
 | **Property** | **Description** | **ETL example** |
 | --------------------- | --------------------- | --------------------- |
-| **Commutativity** | Reordering operands doesn’t change the result. | **Inner join**: `A ⋈ B = B ⋈ A` (not true for left/right). · **Union as multiset**: `X ⊎ Y = Y ⊎ X`. · **Filter with AND**: `filter(p)∘filter(q) = filter(q)∘filter(p)`.                                                     |
-| **Associativity** | Grouping of operations doesn’t matter. | **Union**: `(X ⊎ Y) ⊎ Z = X ⊎ (Y ⊎ Z)`. · **Chained maps**: `map(f)∘(map(g)∘map(h)) = (map(f)∘map(g))∘map(h)`. |
-| **Identity ** | There’s a no-op element. | **Union**: `X ⊎ ∅ = X`. · **Filter**: `filter(True)` is identity. |
-| **Idempotence** | Doing it twice = doing it once. | **Dedupe**: `dedupe(dedupe(X)) = dedupe(X)`. · **Cast-to-spec**: `cast_spec∘cast_spec = cast_spec`. |
+| **Commutativity** | Order doesn’t matter. Doing `A` then `B` gives the same result as `B` then `A`. | Inner joins are commutative: `A ⋈ B = B ⋈ A`. Left/right joins are not, since the order matters. |
+| **Associativity** | How you group the same operation doesn't change the result. `A + (B + C)` is the same as `C + (B + A)` | Filter chains are associative: `(filter p ∘ filter q) ∘ filter r = filter p ∘ (filter q ∘ filter r)` |
+| **Identity ** | An identity is a "do-nothing" value for an operation: doing `x ⊕ identity` leaves `x` unchanged. | A write with an empty source DataFrame makes no changes to the target table. |
+| **Idempotence** | Doing the same thing twice is the same as doing it once. | Multiple writes will not change the target table beyond the first write.|
 | **Distributivity** | One op distributes over another. | **Filter over union**: `filter(p, X ⊎ Y) = filter(p,X) ⊎ filter(p,Y)`. · **Map over union**: `map(f, X ⊎ Y) = map(f,X) ⊎ map(f,Y)`. · **Projection over union**: `select(A, X ⊎ Y) = select(A,X) ⊎ select(A,Y)`.             |
 | **Permutation invariance** | Row order doesn’t matter. | **Whole pipeline** (pure, set/multiset semantics): `T(permute(X)) = T(X)`. · **“Latest per key”**: shuffling input doesn’t change which row is chosen. |
 | **Monotonicity** | Adding "more" of something doesn’t decrease the result. | **FK coverage**: adding valid parents can’t increase left-anti misses. · **Dedupe**: adding duplicates can’t increase distinct key count. · **(Agg)** adding non-negative facts can’t reduce `sum/count/max`. |

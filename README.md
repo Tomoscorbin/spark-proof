@@ -54,7 +54,7 @@ Because all generators return standard Hypothesis strategies you can extend them
 
 ## Integration with pytest and Spark
 
-Spark Proof expects a pytest fixture that returns a `SparkSession`. By default the `@data_frame` decorator looks for a fixture named `spark`, but you can change that by passing `session="another_fixture"`. The fixture in `tests/conftest.py` shows a lean local `SparkSession` configuration that keeps tests fast.
+Spark Proof expects a pytest fixture that returns a `SparkSession`. By default the `@data_frame` decorator looks for a fixture named `spark`, but you can change that by passing `session="another_fixture"`.
 
 Behind the scenes the decorator requests rows from Hypothesis, converts them into a Spark schema, and builds a DataFrame for every test invocation. This keeps your test bodies short and expressive while ensuring every generated dataset is valid Spark data.
 

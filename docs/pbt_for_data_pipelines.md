@@ -24,7 +24,46 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 
 ---
 
+| **Property** | **Description** | **ETL example** |
+| --------------------- | --------------------- | --------------------- |
+| **Commutativity** | Reordering operands doesn’t change the result. | **Inner join**: `A ⋈ B = B ⋈ A` (not true for left/right). · **Union as multiset**: `X ⊎ Y = Y ⊎ X`. · **Filter with AND**: `filter(p)∘filter(q) = filter(q)∘filter(p)`.                                                     |
+| **Associativity** | Grouping of operations doesn’t matter. | **Union**: `(X ⊎ Y) ⊎ Z = X ⊎ (Y ⊎ Z)`. · **Chained maps**: `map(f)∘(map(g)∘map(h)) = (map(f)∘map(g))∘map(h)`. |
+| **Identity ** | There’s a no-op element. | **Union**: `X ⊎ ∅ = X`. · **Filter**: `filter(True)` is identity. |
+| **Idempotence** | Doing it twice = doing it once. | **Dedupe**: `dedupe(dedupe(X)) = dedupe(X)`. · **Cast-to-spec**: `cast_spec∘cast_spec = cast_spec`. |
+| **Distributivity** | One op distributes over another. | **Filter over union**: `filter(p, X ⊎ Y) = filter(p,X) ⊎ filter(p,Y)`. · **Map over union**: `map(f, X ⊎ Y) = map(f,X) ⊎ map(f,Y)`. · **Projection over union**: `select(A, X ⊎ Y) = select(A,X) ⊎ select(A,Y)`.             |
+| **Permutation invariance** | Row order doesn’t matter. | **Whole pipeline** (pure, set/multiset semantics): `T(permute(X)) = T(X)`. · **“Latest per key”**: shuffling input doesn’t change which row is chosen. |
+| **Monotonicity** | Adding "more" of something doesn’t decrease the result. | **FK coverage**: adding valid parents can’t increase left-anti misses. · **Dedupe**: adding duplicates can’t increase distinct key count. · **(Agg)** adding non-negative facts can’t reduce `sum/count/max`. |
+| **Homomorphism (chunk/merge law)** | Process chunks, merge partials ⇒ same as one shot (with a defined merge). | **ETL stages**: `T(X₁ ⊎ X₂ …) = merge(T(X₁), T(X₂), …)` when `T` is designed to be mergeable (e.g., per-partition transforms). · **(Agg)** algebraic/distributive aggregations.                                              |
+| **Absorption / Fusion** | Combining like ops collapses. | **Filter fusion**: `filter(p)∘filter(q) = filter(p∧q)`. · **Projection fusion**: `select(A)∘select(B) = select(A∩B)`. · **Map fusion**: `map(f)∘map(g) = map(f∘g)`. |
+| **Compositionality (locality)** | Per-key results depend only on that key’s rows. | **Per-key latest**: `latest_k(X⊎Y) = latest_k(X) ⊎ latest_k(Y)` if `X` and `Y` have disjoint key sets. · **Per-key join caps**: multiplicity bounds hold independently per key. |
+| **Conservation (row accounting)** | Inputs transform with explicit adds/drops; nothing vanishes or appears “by magic.” | `out = in − filtered + inserted + updated` per partition/date; numbers reconcile to policy. |
+| **Determinism / Purity** | Same inputs & config ⇒ same outputs. | No hidden `now()`/randomness/unstable UDF. Repartitioning doesn’t change results (aside from row order). |
+| **Partial inverse (cancellativity, when designed)** | A later step can undo a specific earlier step. | **Staging → dedupe**: `inflate ∘ deflate ≈ id` for reversible encodings; **decode∘encode = id`. (Only if you design it so.) |
+| **Order-select determinism** | Chosen row is a pure function of declared order & tie-breakers. | **Latest/earliest per key**: adding strictly older data doesn’t change result; strictly newer replaces deterministically; ties resolve via `(ts, priority, id)`—never random.                                                |
+| **Join cardinality cap** | Output multiplicity bounded by design. | **Left 1:1**: `count(child ⟕ parent) = count(child)`; per-child matches ≤ 1. · **Inner 1:1**: `count(A⋈B) ≤ min(count(A), count(B))`. · **Semi/Anti complement**: matched ⊎ unmatched = child.                               |
+| **Type/normalization invariance** | Normalizing keys doesn’t change logical joins. | Trimming/casing both sides then joining gives same links as pre-normalized pipeline. |
+
+
+
 ## Testable ETL Properties
+
+| **Property**                            | **Examples** |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------|
+| **Schema contract**                     | Columns, types, and nullability are exactly as expected; no surprise extra/missing columns. |
+| **Keys are unique**                     | No duplicate keys after the transformation. |
+| **Joins don’t fan-out**                 | An inner join never increases row count. |
+| **Duplicate handling is explicit**      | If we dedupe, re-ingesting the same file changes nothing; if we preserve multiplicity, counts double predictably. |
+| **Idempotent reruns**                   | Running the same batch twice yields the same output (after canonical sort/hash). |
+| **Row accounting holds**                | `out_rows = in_rows − filtered + inserted + updated` per partition/date; nothing silently disappears or multiplies. |
+| **Domain & range respected**            | Quantities aren’t negative; status ∈ {“open”, “closed”}; emails match regex; out-of-range values go to a dead-letter table. |
+| **Completeness / coverage**             | All expected customers for the day appear; required columns are populated; optional columns stay within allowed null rates. |
+| **Late-data policy is enforced**        | Events older than the watermark don’t alter SCD1 records (or they create SCD2 versions) exactly as documented. |
+| **Partition/parallelism invariant**     | Repartitioning/shuffling the same input doesn’t change results (aside from row order). |
+| **Deterministic, no hidden randomness** | No `now()`/random/unstable UDFs without being part of the contract; same inputs ⇒ same outputs. |
+| **Schema evolution stays compatible**   | Adding a nullable column with a default doesn’t break existing readers; renames are applied via a declared mapping. |
+| **Type/normalization alignment**        | Join keys are trimmed/cased consistently; `customer_id` types match on both sides. |
+| **Semi/anti semantics are correct**     | `left_semi` returns exactly the set of orders that have a customer; `left_anti` returns exactly those without. |
+
 
 | Property Type | Example Properties |
 |-----------|--------------------|

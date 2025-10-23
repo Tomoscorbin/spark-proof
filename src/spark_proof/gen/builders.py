@@ -1,12 +1,10 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Pattern
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, InvalidOperation
 from hypothesis import strategies as st
 import pyspark.sql.types as T
-
-
-# TODO: rename this file!
-
+import datetime as dt
+import re
 
 Width = Literal[16, 32, 64]
 
@@ -69,8 +67,8 @@ def build_float_generator(
         raise ValueError("min_value must be <= max_value")
     if min_value < type_min or max_value > type_max:
         raise ValueError(
-            f"{generator_name}() bounds must be within [{type_min}, {type_max}] but got "
-            f"[{min_value}, {max_value}]",
+            f"{generator_name}() bounds must be within [{type_min}, {type_max}] but got"
+            f" [{min_value}, {max_value}]",
         )
 
     strategy = st.floats(
@@ -96,6 +94,78 @@ def build_decimal_generator(
     return Generator(
         strategy=strategy, spark_type=T.DecimalType(spec.precision, spec.scale)
     )
+
+
+def build_date_generator(
+    *,
+    min_value: dt.date,
+    max_value: dt.date,
+    type_min: dt.date,
+    type_max: dt.date,
+) -> Generator:
+    if min_value > max_value:
+        raise ValueError("min_value must be <= max_value")
+    if min_value < type_min or max_value > type_max:
+        raise ValueError(
+            f"date bounds must be within [{type_min}, {type_max}] but got"
+            f" [{min_value}, {max_value}]"
+        )
+    strategy = st.dates(
+        min_value=min_value,
+        max_value=max_value,
+    )
+    return Generator(strategy=strategy, spark_type=T.DateType())
+
+
+def build_timestamp_generator(
+    *,
+    min_value: dt.datetime,
+    max_value: dt.datetime,
+    type_min: dt.datetime,
+    type_max: dt.datetime,
+) -> Generator:
+    if min_value.tzinfo is not None or max_value.tzinfo is not None: # TODO: test this
+        raise ValueError(f"Only naive datetimes supported")
+    if min_value > max_value:
+        raise ValueError("min_value must be <= max_value")
+    if min_value < type_min or max_value > type_max:
+        raise ValueError(
+            f"timestamp bounds must be within [{type_min}, {type_max}] but got"
+            f" [{min_value}, {max_value}]"
+        )
+    strategy = st.datetimes(
+        min_value=min_value,
+        max_value=max_value,
+    )
+    return Generator(strategy=strategy, spark_type=T.TimestampType())
+
+
+def build_string_generator(
+    *,
+    min_size: int,
+    max_size: int | None,
+    spark_type: T.DataType,
+) -> Generator:
+    if min_size < 0:
+        raise ValueError(f" min_size must be >= 0")
+    if max_size is not None and max_size < min_size:
+        raise ValueError(
+            f"max_size must be >= min_size (min_size={min_size},"
+            f" max_size={max_size})"
+        )
+    strategy = st.text(min_size=min_size, max_size=max_size)
+    return Generator(strategy=strategy, spark_type=spark_type)
+
+
+def build_string_from_regex_generator(
+    *,
+    pattern: str | Pattern[str],
+    full_match: bool,
+    spark_type: T.DataType,
+) -> Generator:
+    compiled = re.compile(pattern) if isinstance(pattern, str) else pattern
+    strategy = st.from_regex(regex=compiled, fullmatch=full_match)
+    return Generator(strategy=strategy, spark_type=spark_type)
 
 
 # ---------------- Helpers

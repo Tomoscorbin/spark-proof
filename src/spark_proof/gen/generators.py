@@ -22,13 +22,15 @@ from spark_proof.gen.builders import (
     build_decimal_generator,
     build_float_generator,
     build_integer_generator,
+    build_date_generator,
+    build_timestamp_generator,
+    build_string_generator,
+    build_string_from_regex_generator,
 )
 import pyspark.sql.types as T
 from typing import Pattern
-import re
 
 # TODO: add realistic date range
-# TODO: should validation go here or builders?
 
 
 def boolean() -> Generator:
@@ -123,19 +125,12 @@ def date(
     min_value: dt.date = DATE_MIN,
     max_value: dt.date = DATE_MAX,
 ) -> Generator:
-    if min_value > max_value:
-        raise ValueError("min_value must be <= max_value")
-    if min_value < DATE_MIN or max_value > DATE_MAX:
-        raise ValueError(
-            f"date() bounds must be within [{DATE_MIN}, {DATE_MAX}] but got"
-            f" [{min_value}, {max_value}]"
-        )
-
-    strategy = st.dates(
+    return build_date_generator(
         min_value=min_value,
         max_value=max_value,
-    )
-    return Generator(strategy=strategy, spark_type=T.DateType())
+        type_min=DATE_MIN,
+        type_max=DATE_MAX,
+)
 
 
 def timestamp(
@@ -143,21 +138,12 @@ def timestamp(
     min_value: dt.datetime = TIMESTAMP_MIN,
     max_value: dt.datetime = TIMESTAMP_MAX,
 ) -> Generator:
-    if min_value.tzinfo is not None or max_value.tzinfo is not None:
-        raise ValueError("timestamp() only supports naive datetimes")
-    if min_value > max_value:
-        raise ValueError("min_value must be <= max_value")
-    if min_value < TIMESTAMP_MIN or max_value > TIMESTAMP_MAX:
-        raise ValueError(
-            f"timestamp() bounds must be within [{TIMESTAMP_MIN}, {TIMESTAMP_MAX}] but got"
-            f" [{min_value}, {max_value}]"
-        )
-
-    strategy = st.datetimes(
+    return build_timestamp_generator(
         min_value=min_value,
         max_value=max_value,
+        type_min=TIMESTAMP_MIN,
+        type_max=TIMESTAMP_MAX,
     )
-    return Generator(strategy=strategy, spark_type=T.TimestampType())
 
 
 # TODO: figure out how to apply alphabet
@@ -166,13 +152,11 @@ def string(
     min_size: int = 0,
     max_size: int | None,
 ) -> Generator:
-    if min_size < 0:
-        raise ValueError("min_length must be >= 0")
-    if max_size is not None and max_size < min_size:
-        raise ValueError("max_length must be >= min_length")
-
-    strategy = st.text(min_size=min_size, max_size=max_size)
-    return Generator(strategy=strategy, spark_type=T.StringType())
+    return build_string_generator(
+        min_size=min_size,
+        max_size=max_size,
+        spark_type=T.StringType(),
+    )
 
 
 def string_from_regex(
@@ -180,9 +164,8 @@ def string_from_regex(
     pattern: str | Pattern[str],
     full_match: bool = True,
 ) -> Generator:
-    if isinstance(pattern, str):
-        compiled = re.compile(pattern)
-    else:
-        compiled = pattern
-    strategy = st.from_regex(regex=compiled, fullmatch=full_match)
-    return Generator(strategy=strategy, spark_type=T.StringType())
+    return build_string_from_regex_generator(
+        pattern=pattern,
+        full_match=full_match,
+        spark_type=T.StringType(),
+    )

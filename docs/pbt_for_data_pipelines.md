@@ -24,11 +24,9 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 
 ---
 
-## Core Property Categories
+## Testable ETL Properties
 
-`spark-proof` expresses typical data-pipeline guarantees as testable invariants.
-
-| Category | Example Properties | Related Data-Quality Dimension |
+| Property Type | Example Properties | Related Data-Quality Dimension |
 |-----------|--------------------|-------------------------------|
 | **Schema contracts** | The output schema matches the declared specification. All columns have valid data types, expected nullability, and precision or scale constraints. Extra or missing columns are detected. | *Validity* |
 | **Key uniqueness** | For any natural key or unique identifier, the resulting dataset contains no duplicates. Where duplicates are present in the source, the transformation defines a clear and deterministic rule for resolution. | *Uniqueness* |

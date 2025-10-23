@@ -225,7 +225,7 @@ def _make_decimal_spec(precision: int, scale: int) -> DecimalSpec:
 
 def _validate_bounds(spec: DecimalSpec, b: Bounds) -> None:
     # window check (only for user-supplied bounds)
-    if b.has_min and not (spec.type_min <= b.lo <= spec.type_max):
+    if b.has_min and not (spec.type_min <= b.lo <= spec.type_max): #TODO: make this more readable
         raise ValueError(
             f"min_value {b.lo} outside DECIMAL({spec.precision},{spec.scale}) "
             f"window [{spec.type_min}, {spec.type_max}]"

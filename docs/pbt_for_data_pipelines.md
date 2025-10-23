@@ -28,11 +28,11 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 
 | Property Type | Example Properties |
 |-----------|--------------------|
-| **Schema contracts** | The output schema matches the declared specification. All columns have valid data types, expected nullability, and precision or scale constraints. Extra or missing columns are detected. |
-| **Key uniqueness** | For any natural key or unique identifier, the resulting dataset contains no duplicates. Where duplicates are present in the source, the transformation defines a clear and deterministic rule for resolution. | 
-| **Referential integrity** | Relationships between datasets remain consistent. Joins do not multiply rows unexpectedly, missing foreign keys are handled predictably, and parent/child links remain valid. |
+| **Schema contracts** | The output has the expected columns, types, nullability, precision/scale, with no extra/missing columns. |
+| **Key uniqueness** | Natural/primary keys are unique after a transformation, with deterministic dedupe if needed. | 
+| **Joins** | Joins preserve the intended cardinality. For example, an inner join never increases row count. |
 | **Aggregation invariants** | Aggregations, groupings, or rollups produce stable results regardless of how data is chunked, partitioned, or ordered. Partial aggregations followed by unions are equivalent to a single global aggregation. |
-| **Domain and range constraints** | Values fall within valid, expected ranges or enumerations. Outliers, invalid categories, and impossible values (e.g. negative quantities or future timestamps) are either cleaned, imputed, or rejected according to defined rules. |
+| **Values within allowed ranges/categories** | Values fall within valid, expected ranges or enumerations. Outliers, invalid categories, and impossible values (e.g. negative quantities or future timestamps) are handled appropriately. |
 | **Idempotence** | Running the same transformation multiple times with identical input yields the same result. Duplicate ingestion or reruns do not introduce new or inconsistent data. |
 | **Temporal and sequential correctness** | Any ordering, windowing, or stateful logic behaves deterministically across time. For example, "latest per key", "earliest event", or "rolling window" rules always produce consistent, non-contradictory outcomes. |
 | **Completeness and presence** | All mandatory fields and expected entities appear in the output. Optional fields obey nullability rules, and missing data is flagged or filled according to defined policy. |

@@ -22,8 +22,10 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 | **Aligns with data quality principles** | The invariants you test in PBT - schema validity, key uniqueness, referential integrity, deterministic transformations - are the same principles that underpin good data-quality practice. In other words, property-based tests let you assert the same or similar rules that you'd monitor in production, but at the code level. This creates a clean bridge between data-quality assurance and automated testing. |
 | **Serves as documentation** | Good tests explain why the code exists and what guarantees it provides. Property-based tests take this a step further by expressing the fundamental truths about your data logic. This makes your ETL system self-describing and easier to reason about. |
 
+---
+
 ## What Properties can you test in data pipelines?
-Finding good properties is notoriously hard. Even outside ETL, it is hard to articulate behaviours that should hold for all inputs. To make this easier, PBT practitioners often draw from algebraic laws like commutativity, associativity, and idempotence. These laws also apply to data pipelines, and can be used to express the properties of our pipelines that sould always remain true.
+Finding good properties is notoriously hard. Even outside ETL, it is hard to articulate behaviours that should hold for all inputs. To make this easier, PBT practitioners often draw from algebraic laws like commutativity, associativity, and idempotence. These laws also apply to data pipelines, and can be used to express the properties of our pipelines that sould always remain true. Below is a table of core algebraic law and how they translate into testable properties in ETL pipelines.
 
 | **Law** | **Description** | **ETL example** |
 | --------------------- | --------------------- | --------------------- |

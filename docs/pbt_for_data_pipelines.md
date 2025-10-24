@@ -31,14 +31,14 @@ Finding good properties is notoriously hard. Even outside ETL, it is hard to art
 | --------------------- | --------------------- | --------------------- |
 | **Commutativity** | Order doesn’t matter. Doing `A` then `B` gives the same result as `B` then `A`. | Inner joins are commutative: `A ⋈ B = B ⋈ A`. Left/right joins are not, since the order matters. |
 | **Associativity** | How you group the same operation doesn't change the result. `A + (B + C)` is the same as `C + (B + A)` | Filter chains are associative: `(filter p ∘ filter q) ∘ filter r = filter p ∘ (filter q ∘ filter r)` |
-| **Identity** | An identity is a "do-nothing" value for an operation: doing `x ⊕ identity` leaves `x` unchanged. | A write with an empty source DataFrame makes no changes to the target table. |
-| **Idempotence** | Doing the same thing twice is the same as doing it once. | Multiple writes will not change the target table beyond the first write. |
-| **Distributivity** | Doing something to the whole is the same as doing it to each part and then putting the parts back together. | Filtering over a union: `filter(X ⊎ Y) = filter(X) ⊎ filter(Y)`. |
-| **Permutation invariance** | Changing the order of the inputs does not change the result. | Calculating the latest record per key: the input order doesn’t change which row is chosen. |
-| **Monotonicity** | When you add more input (or move a threshold in one direction), a result can only move one way. | Dropping duplicates can only result in the same number of rows or fewer. There can never be more rows. |
-| **Homomorphism** | Doing something to the whole is the same as doing it to each part and then combining the results. | Aggregation rollups: a weekly total equals the sum of daily totals. |
-| **Fusion** | Combining equivalent steps into a single step produces the same result. | Combining multiple filters into one is equivalent: `filter(p) ∘ filter(q) = filter(p ∧ q)`. |
-| **Determinism** | The same inputs always produce the same result. | If the ordering columns in a window function are not unique, the ouptput can change from run to run. | 
+| **Identity** | An identity is a "do-nothing" value for an operation: doing `x + identity` leaves `x` unchanged. | Writing an empty source DataFrame to a table acts as an identity - it makes no changes to the target table. Similarly, filtering with a predicate that's always true leaves the dataset unchanged. |
+| **Idempotence** | Doing the same thing twice is the same as doing it once. | A write write is idempotent if re-running it produces the same state as the first run. Once the data has been written, running the same operation again does not change the target table further. |
+| **Distributivity** | Doing something to the whole is the same as doing it to each part and then putting the parts back together. | Filtering distributes over unions: filtering the union of two datasets is equivalent to filtering each one and then uniting the results: `filter(X ∪ Y) = filter(X) ∪ filter(Y)`. |
+| **Permutation invariance** | Changing the order of the inputs does not change the result. | Order-insensitive transformations like deduplication or "latest-record-per-key" selection are permutation invariant since the result depends only on data values, not on input ordering. |
+| **Monotonicity** | When you add more input (or move a threshold in one direction), a result can only move one way. | Dropping duplicates is monotonic: the output can only have the same number of rows or fewer, never more. Similarly, applying a filter can only reduce results, not increase them. |
+| **Homomorphism** | Doing something to the whole is the same as doing it to each part and then combining the results. | Some aggregations are homomorphic: computing totals for subsets (e.g. daily sales) and then summing them produces the same result as aggregating all data at once (e.g. weekly total). |
+| **Fusion** | Combining equivalent steps into a single step produces the same result. | Merging consecutive filters is a fusion law: `filter(p) ∘ filter(q)` is equivalent to `filter(p ∧ q)`. |
+| **Determinism** | The same inputs always produce the same result. | A transformation is deterministic if it gives consistent results every run. For example, a window function with non-unique ordering columns can be non-deterministic, since record order can change between runs. | 
 
 
 ## Example: Behavioural Test

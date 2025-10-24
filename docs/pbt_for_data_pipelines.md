@@ -41,43 +41,19 @@ Finding good properties is notoriously hard. Even outside ETL, it is hard to art
 | **Determinism** | The same inputs always produce the same result. | A transformation is deterministic if it gives consistent results every run. For example, a window function with non-unique ordering columns can be non-deterministic, since record order can change between runs. | 
 
 ## Data-specific properties
-While algebraic laws describe more generally how transformations behave when reordered or combined, for example, there are some common data-specific properties that focus on the content and structure of the datasets themselves. 
+While algebraic laws describe more generally how transformations behave, there are some common data-specific properties that focus on the content and structure of the datasets themselves. 
 
 | **Property**                                 | **Example** |
 | -------------------------------------------- | ----------------------------- |
 | **Schema contracts**                         | The output schema always matches its declared specification: all columns exist with the correct names, data types, and nullability, with no extra or missing columns. |
 | **Key uniqueness**                           | Each natural key or unique identifier appears at most once in the output. |
 | **Referential integrity**                    | Foreign keys in the output correspond to valid primary keys in reference datasets. For example, every `customer_id` in `orders` exists in `customers`. |
-| **Join cardinality**                         | Joins preserve the expected multiplicity: a left 1:1 join does not increase the row count beyond the left input. |
+| **Join cardinality**                         | Joins preserve the expected multiplicity. For example, an inner join does not produce join explosion, and a left 1:1 join does not increase the row count beyond the left input. |
+| **Key coverage on left joins**               | After a left join, every left key is present in the output. |
+| **Primary key uniqueness**                   | Primary keys are unique after deduplication: no group has `count(*)>1` for `primary_key`. |
+| **Dedupe stability** | Applying a deduplication twice is the same as applying it once. |
 | **As-of uniqueness (SCD2)**                  | For any given key and timestamp, exactly one record is valid (`start ≤ ts < end`). There are never overlapping or missing periods. |
-| **Late-data / watermark policy**             | Events older than the watermark are handled predictably and are never silently included. |
-| **Window boundary determinism**              | Rows that fall exactly on a window edge (e.g. `ts = end`) are handled consistently according to the declared inclusivity rule.                                            |
-| **Row accounting (conservation)**          | The number of rows in the output can be reconciled as `in − filtered + inserted + updated`. No silent duplication or loss.                                                |
-| **Partition invariance**                   | Repartitioning or coalescing the same data does not change results, aside from physical order.                                                                            |
-| **Type / normalisation alignment**         | Join keys use consistent formatting (trimmed, lower-cased, same data type) so joins behave identically across datasets.                                                   |
-| **Approximation error bounds**             | Approximate aggregates (HLL, t-digest, etc.) stay within an acceptable error tolerance (e.g. ±1%).                                                                        |
-| **Boundary determinism (SCD2 or windows)** | The same event timestamp always lands in the same interval when re-run — no drifting boundaries due to time zone or rounding differences.                                 |
-| **Row-level reproducibility**              | Re-running the same transform over the same input data yields byte-for-byte identical rows (after canonical sort).                                                        |
-| **Schema evolution safety**                | Adding new nullable columns or widening data types never breaks downstream consumers; dropping or renaming columns does.                                                  |
-
-
-## Example: Behavioural Test
-
-```python
-from spark_proof import sp
-
-@given(df=sp.data_frame(schema={
-    "customer": sp.string(max_size=10),
-    "date": sp.date(),
-    "amount": sp.decimal(precision=12, scale=2),
-}))
-def test_one_row_per_customer_after_rank(spark, df):
-    # Given arbitrary messy input (dupes, nulls, out-of-order)
-    cleaned = cleanse(df)
-
-    # When keeping the latest transaction per customer
-    actual = rank_and_filter(cleaned, key_cols=["customer"], order_cols=["date"])
-
-    # Then
-    sp.assert_one_row_per_key(actual, ["customer"])  # uniqueness invariant
-
+| **Row accounting**                           | The number of rows in the output can be reconciled as `in − filtered + inserted`. No silent duplication or loss. |
+| **Budget reconciliation**                    | Aggregations reconcile: the sum of each category equals the overall; or group subtotals adds to totals. |
+| **Values within allowed ranges/categories**  | Values fall within valid, expected ranges or enumerations. For example, negative quantities, future timestamps, or invalid categories do not exist in the output. |
+| **Type-cast round-trip**                     | Casting values to another type and back yields an equivalent value. E.g.: `A → B → A`. |

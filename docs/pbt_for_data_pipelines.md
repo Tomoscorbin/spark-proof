@@ -53,7 +53,7 @@ While algebraic laws describe more generally how transformations behave, there a
 | **Primary key uniqueness**                   | Primary keys are unique after deduplication: no group has `count(*)>1` for `primary_key`. |
 | **Dedupe stability** | Applying a deduplication twice is the same as applying it once. |
 | **As-of uniqueness (SCD2)**                  | For any given key and timestamp, exactly one record is valid (`start ≤ ts < end`). There are never overlapping or missing periods. |
-| **Row accounting**                           | The number of rows in the output can be reconciled as `in − filtered + inserted`. No silent duplication or loss. |
+| **Row accounting**                           | The number of rows in the output can be reconciled as `rows_out  =  rows_in  − rows_removed  + rows_inserted`. No silent duplication or loss. |
 | **Budget reconciliation**                    | Aggregations reconcile: the sum of each category equals the overall; or group subtotals adds to totals. |
 | **Values within allowed ranges/categories**  | Values fall within valid, expected ranges or enumerations. For example, negative quantities, future timestamps, or invalid categories do not exist in the output. |
 | **Type-cast round-trip**                     | Casting values to another type and back yields an equivalent value. E.g.: `A → B → A`. |

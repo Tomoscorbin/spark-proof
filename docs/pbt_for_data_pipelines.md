@@ -1,9 +1,12 @@
 # Property-Based Testing for Data Pipelines
 
-## Why Property-Based Testing?
+Property-based testing (PBT) is a technique that asserts high-level truths about your code. In contrast to example-based testing, which asserts that specific cases are correct, PBT defines general "properties" (or invariants) that hold up against wide range of data. Instead of handpicking a few example cases and their expected outcome, by stating general rules and testing them against a variety of randomly generated data, PBT aims to prove that these rules are always true, as opposed to showing that a few scenarios are correct. In Python, this is usually done using [Hypothesis](https://hypothesis.readthedocs.io/en/latest/), a PBT library that generates randomised data for you. Here is a Hypothesis example of a simple property test for a string reverse function:
 
-Traditional tests check that **specific examples** work.  
-Property-based testing (PBT) checks that **general rules** always hold.
+`@given(st.text())
+def test_reverse_preserves_length(text):
+    result = reverse_string(text)
+    assert len(result) == len(text) # the length is unchanged
+`
 
 For data engineering, this difference is important.  
 Example tests might prove that one sample dataset works, but PBT proves that your logic is correct for *all* datasets within realistic bounds.

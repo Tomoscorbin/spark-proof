@@ -15,12 +15,9 @@ This test tells Hypothesis to generate many different strings (`(@given(st.text(
 
 Property based testing lends itself particularly well to the big data space, where we rarely know the "right" output for every possible input. Real-life data is messy. We often work with millions or billions or records with missing values, weird characters, duplicates, out-of-order timestamps, new categories you've never seen, and so on. It's impossible to conceive of every possible record, and even if it were, our tests would be ginormous with all of the boilerplate required for the input/output dataframes.
 
-PBT is good for data pipelines because it allows us to explore the messy data and edge cases we'd never think of or be able to write by hand. Furthermore, many of the things we care about in data pipelines are naturally expressable as properties. Things like, schema contracts, key uniqueness, idempotency. These kinds of properties align nicely with our data quality expectations, meaning we can support data quality with code-level testing. When you turn your pipeline's assumptions into properties, you stop testing specific scenarios and start testing pipeline guarantees.
+PBT is good for data pipelines because it allows us to explore the messy data and edge cases we'd never think of or be able to write by hand. Furthermore, many of the things we care about in data pipelines are naturally expressable as properties. Things like, schema contracts, key uniqueness, idempotency. These kinds of properties align nicely with our data quality expectations, meaning we can reinforce data quality at the code level. When you turn your pipeline's assumptions into properties, you stop testing specific examples and start testing pipeline guarantees.
 
-> If you’re new to property-based testing, [this series by Scott Wlaschin](https://fsharpforfunandprofit.com/series/property-based-testing/) gives a great introduction.
----
-
-## What PBT brings to ETL and big data
+Here are a few of the benefits of applying PBT to data pipelines:
 
 | Benefit | Why It Matters in ETL |
 |----------|----------------------|
@@ -31,6 +28,7 @@ PBT is good for data pipelines because it allows us to explore the messy data an
 | **Aligns with data quality principles** | The invariants you test in PBT - schema validity, key uniqueness, referential integrity, deterministic transformations - are the same principles that underpin good data-quality practice. In other words, property-based tests let you assert the same or similar rules that you'd monitor in production, but at the code level. This creates a clean bridge between data-quality assurance and automated testing. |
 | **Serves as documentation** | Good tests explain why the code exists and what guarantees it provides. Property-based tests take this a step further by expressing the fundamental truths about your data logic. This makes your ETL system self-describing and easier to reason about. |
 
+> If you’re new to property-based testing, [this series by Scott Wlaschin](https://fsharpforfunandprofit.com/series/property-based-testing/) gives a great introduction.
 ---
 
 ## What Properties can you test in data pipelines?

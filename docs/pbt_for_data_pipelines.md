@@ -25,7 +25,7 @@ Example tests might prove that one sample dataset works, but PBT proves that you
 ---
 
 ## What Properties can you test in data pipelines?
-Finding good properties is notoriously hard. Even outside ETL, it is hard to articulate behaviours that should hold for all inputs. To make this easier, PBT practitioners often draw from algebraic laws like commutativity, associativity, and idempotence. These laws also apply to data pipelines, and can be used to express the properties of our pipelines that sould always remain true. Below is a table of core algebraic law and how they translate into testable properties in ETL pipelines.
+Finding good properties is notoriously hard. Even outside ETL, it is hard to articulate behaviours that should hold for all inputs. To make this easier, PBT practitioners often draw from algebraic laws like commutativity, associativity, and idempotence. These laws also apply to data pipelines, and can be used to express the properties of our pipelines that sould always remain true. Below is a table of core algebraic laws and how they translate into testable properties in ETL pipelines.
 
 | **Law** | **Description** | **ETL example** |
 | --------------------- | --------------------- | --------------------- |

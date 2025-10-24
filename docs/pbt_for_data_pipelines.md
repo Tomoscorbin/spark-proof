@@ -40,6 +40,26 @@ Finding good properties is notoriously hard. Even outside ETL, it is hard to art
 | **Fusion** | Combining equivalent steps into a single step produces the same result. | Merging consecutive filters is a fusion law: `filter(p) ∘ filter(q)` is equivalent to `filter(p ∧ q)`. |
 | **Determinism** | The same inputs always produce the same result. | A transformation is deterministic if it gives consistent results every run. For example, a window function with non-unique ordering columns can be non-deterministic, since record order can change between runs. | 
 
+## Data-specific properties
+While algebraic laws describe more generally how transformations behave when reordered or combined, for example, there are some common data-specific properties that focus on the content and structure of the datasets themselves. 
+
+| **Property**                                 | **Example** |
+| -------------------------------------------- | ----------------------------- |
+| **Schema contracts**                         | The output schema always matches its declared specification: all columns exist with the correct names, data types, and nullability, with no extra or missing columns. |
+| **Key uniqueness**                           | Each natural key or unique identifier appears at most once in the output. |
+| **Referential integrity**                    | Foreign keys in the output correspond to valid primary keys in reference datasets. For example, every `customer_id` in `orders` exists in `customers`. |
+| **Join cardinality**                         | Joins preserve the expected multiplicity: a left 1:1 join does not increase the row count beyond the left input. |
+| **As-of uniqueness (SCD2)**                  | For any given key and timestamp, exactly one record is valid (`start ≤ ts < end`). There are never overlapping or missing periods. |
+| **Late-data / watermark policy**             | Events older than the watermark are handled predictably and are never silently included. |
+| **Window boundary determinism**              | Rows that fall exactly on a window edge (e.g. `ts = end`) are handled consistently according to the declared inclusivity rule.                                            |
+| **Row accounting (conservation)**          | The number of rows in the output can be reconciled as `in − filtered + inserted + updated`. No silent duplication or loss.                                                |
+| **Partition invariance**                   | Repartitioning or coalescing the same data does not change results, aside from physical order.                                                                            |
+| **Type / normalisation alignment**         | Join keys use consistent formatting (trimmed, lower-cased, same data type) so joins behave identically across datasets.                                                   |
+| **Approximation error bounds**             | Approximate aggregates (HLL, t-digest, etc.) stay within an acceptable error tolerance (e.g. ±1%).                                                                        |
+| **Boundary determinism (SCD2 or windows)** | The same event timestamp always lands in the same interval when re-run — no drifting boundaries due to time zone or rounding differences.                                 |
+| **Row-level reproducibility**              | Re-running the same transform over the same input data yields byte-for-byte identical rows (after canonical sort).                                                        |
+| **Schema evolution safety**                | Adding new nullable columns or widening data types never breaks downstream consumers; dropping or renaming columns does.                                                  |
+
 
 ## Example: Behavioural Test
 

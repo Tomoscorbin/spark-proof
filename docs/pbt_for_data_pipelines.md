@@ -1,6 +1,8 @@
 # Property-Based Testing for Data Pipelines
 
-Property-based testing (PBT) is a technique that asserts high-level truths about your code. In contrast to example-based testing, which asserts that specific cases are correct, PBT defines general "properties" (or invariants) that hold up against wide range of data. Instead of handpicking a few example cases and their expected outcome, by stating general rules and testing them against a variety of randomly generated data, PBT aims to prove that these rules are always true, as opposed to showing that a few scenarios are correct. In Python, this is usually done using [Hypothesis](https://hypothesis.readthedocs.io/en/latest/), a PBT library that generates randomised data for you. Here is a Hypothesis example of a simple property test for a string reverse function:
+Property-based testing (PBT) is a technique that asserts high-level truths about your code. In contrast to example-based testing, which asserts that specific cases are correct, PBT defines general "properties" (or invariants) that hold up against wide range of data. Instead of handpicking a few example cases and their expected outcome, by stating general rules and testing them against a variety of randomly generated data, PBT aims to prove that these rules are always true, as opposed to showing that a few scenarios are correct. 
+
+In Python, PBT is usually done using [Hypothesis](https://hypothesis.readthedocs.io/en/latest/), a library that generates randomised data for you. Here is a Hypothesis example of a simple property test for a string reverse function:
 
 ```python
 @given(st.text())
@@ -9,8 +11,11 @@ def test_reverse_preserves_length(text):
     assert len(result) == len(text) # the length is unchanged
 ```
 
-For data engineering, this difference is important.  
-Example tests might prove that one sample dataset works, but PBT proves that your logic is correct for *all* datasets within realistic bounds.
+This test tells Hypothesis to generate many different strings (`(@given(st.text()))`), including empty strings and unusual Unicode, and for each one it calls `reverse_string(text)` and checks a single rule: reversing a string must not change its length. There are no hard-coded examples or expected outputs; instead, you’re asserting an invariant across a wide input space, and the test fails as soon as Hypothesis finds any string that breaks that rule. If the test fails, Hypothesis will perform "shrinking", where it searches for the smallest input that causes a failure and reports that minimal counterexample.
+
+Property based testing lends itself particularly well to the big data space, where we rarely know the "right" output for every possible input. Real-life data is messy, with missing values, weird characters, duplicates, out-of-order timestamps, new categories you've never seen, and so on. It's impossible to conceive of every possible issue, and even if it were, our tests would be ginormous with all of the boilerplate required for the input/output dataframes. It would be a maintenance nightmare.
+
+PBT is good for data pipelines because it allows us to explore the messy data and edge cases we'd never think of or be able to write by hand.
 
 > If you’re new to property-based testing, [this series by Scott Wlaschin](https://fsharpforfunandprofit.com/series/property-based-testing/) gives a great introduction.
 ---

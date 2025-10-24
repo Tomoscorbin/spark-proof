@@ -11,7 +11,7 @@ def test_reverse_preserves_length(text):
     assert len(result) == len(text) # the length is unchanged
 ```
 
-This test tells Hypothesis to generate many different strings (`(@given(st.text()))`), including empty strings and unusual Unicode, and for each one it calls `reverse_string(text)` and checks a single rule: reversing a string must not change its length. There are no hard-coded examples or expected outputs; instead, you’re asserting an invariant across a wide input space, and the test fails as soon as Hypothesis finds any string that breaks that rule. If the test fails, Hypothesis will perform "shrinking", where it searches for the smallest input that causes a failure and reports that minimal counterexample.
+This test tells Hypothesis to generate many different strings (`(@given(st.text()))`), including empty strings and unusual Unicode, and for each one it calls `reverse_string(text)` and checks a single rule: reversing a string must not change its length. There are no hard-coded examples or expected outputs; instead, you’re asserting an invariant across a wide input space, and the test fails as soon as Hypothesis finds any string that breaks that rule.
 
 Property based testing lends itself particularly well to the big data space, where we rarely know the "right" output for every possible input. Real-life data is messy, with missing values, weird characters, duplicates, out-of-order timestamps, new categories you've never seen, and so on. It's impossible to conceive of every possible issue, and even if it were, our tests would be ginormous with all of the boilerplate required for the input/output dataframes. It would be a maintenance nightmare.
 

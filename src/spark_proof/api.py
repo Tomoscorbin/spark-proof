@@ -1,5 +1,5 @@
 import pyspark.sql.types as T
-from spark_proof.core.metadata import DomainMetadata
+from spark_proof.core.metadata import DomainMetadata, TypeName
 from spark_proof.core.constraints import RangeConstraint
 from spark_proof.core.strategies import (
     FloatStrategies,
@@ -31,7 +31,7 @@ import datetime
 
 # Short
 _short_meta = DomainMetadata[int](
-    name="short",
+    name=TypeName.SHORT,
     spark_type=T.ShortType(),
     python_type=int,
 )
@@ -49,7 +49,7 @@ short = RangeField(
 
 # Integer
 _integer_meta = DomainMetadata[int](
-    name="integer",
+    name=TypeName.INTEGER,
     spark_type=T.IntegerType(),
     python_type=int,
 )
@@ -68,7 +68,7 @@ integer = RangeField(
 
 # Long
 _long_meta = DomainMetadata[int](
-    name="long",
+    name=TypeName.LONG,
     spark_type=T.LongType(),
     python_type=int,
 )
@@ -87,7 +87,7 @@ long = RangeField(
 
 # Float
 _float_meta = DomainMetadata[float](
-    name="float",
+    name=TypeName.FLOAT32,
     spark_type=T.FloatType(),
     python_type=float,
 )
@@ -105,7 +105,7 @@ float32 = RangeField(
 
 # Double
 _double_meta = DomainMetadata[float](
-    name="double",
+    name=TypeName.DOUBLE,
     spark_type=T.DoubleType(),
     python_type=float,
 )
@@ -124,7 +124,7 @@ double = RangeField(
 
 # Date
 _date_meta = DomainMetadata[datetime.date](
-    name="date",
+    name=TypeName.DATE,
     spark_type=T.DateType(),
     python_type=datetime.date,
 )
@@ -142,7 +142,7 @@ date_field = RangeField[datetime.date](
 
 # Timestamp
 _timestamp_meta = DomainMetadata[datetime.datetime](
-    name="timestamp",
+    name=TypeName.TIMESTAMP,
     spark_type=T.TimestampType(),
     python_type=datetime.datetime,
 )

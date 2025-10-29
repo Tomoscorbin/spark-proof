@@ -22,3 +22,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pylint (>=4.0.2,<5.0.0)"
+]

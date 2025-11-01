@@ -15,27 +15,21 @@ class RangeConstraint(Generic[DT]):
         self._domain_min = domain_min
         self._domain_max = domain_max
 
-    def _validate_single(self, value: DT) -> None:
-        """
-        Validate that a single candidate literal is allowed
-        for this domain.
-        """
-        self._reject_bool(value)
-        self._check_within_domain(value)
-
     def _validate_values(self, values: Sequence[DT]) -> None:
         """
         Validate that a sequence of explicit allowed values is OK.
 
         Rules:
         - must not be empty
+        - no bools
         - every value must be within the domain
         """
         if not values:
             raise ValueError("values() requires at least one value")
 
         for v in values:
-            self._validate_single(v)
+            self._reject_bool(v)
+            self._check_within_domain(v)
 
     def _validate_bounds(self, min_value: DT, max_value: DT) -> None:
         """
@@ -45,9 +39,6 @@ class RangeConstraint(Generic[DT]):
         - min_value <= max_value
         - both endpoints are inside the domain
         """
-        self._reject_bool(min_value)
-        self._reject_bool(max_value)
-
         if min_value > max_value:
             raise ValueError(
                 f"min_value must be <= max_value (got {min_value} > {max_value})"

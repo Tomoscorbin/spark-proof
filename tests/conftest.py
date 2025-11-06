@@ -22,8 +22,7 @@ def spark() -> Iterator[SparkSession]:
     """Minimal, fast SparkSession for tests."""
     quiet_py4j()
     spark = (
-        SparkSession.builder.master("local[1]")
-        .appName("spark-proof-tests")
+        SparkSession.builder.appName("spark-proof-tests")
         .master("local[1]")
         .config("spark.network.timeout", "10000")
         .config("spark.executor.heartbeatInterval", "1000")

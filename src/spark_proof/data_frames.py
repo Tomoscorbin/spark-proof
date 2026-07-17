@@ -2,7 +2,8 @@ from typing import Any, Callable, Mapping
 
 from spark_proof._internal.materialisation import materialise
 from spark_proof._internal.models import ValueSpec, build_data_frame_spec
-from spark_proof._internal.runtime import Rows, wrap_test
+from spark_proof._internal.runtime import wrap_test
+from spark_proof._internal.types import Rows
 
 
 def data_frame(

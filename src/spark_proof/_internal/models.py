@@ -5,6 +5,8 @@ import hypothesis.strategies as st
 import pyspark.sql.types as T
 from hypothesis.strategies import SearchStrategy
 
+from spark_proof._internal.types import Rows
+
 
 @dataclass(frozen=True, slots=True)
 class ValueSpec:
@@ -23,7 +25,7 @@ class DataFrameSpec:
     """Private generation plan: explicit Spark schema + bounded rows strategy."""
 
     schema: T.StructType
-    rows_strategy: SearchStrategy[list[dict[str, Any]]]
+    rows_strategy: SearchStrategy[Rows]
 
 
 def build_data_frame_spec(

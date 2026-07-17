@@ -14,7 +14,7 @@ from typing import Any, Callable
 from hypothesis import HealthCheck, Phase, given, note, settings
 from hypothesis.strategies import SearchStrategy
 
-Rows = list[dict[str, Any]]
+from spark_proof._internal.types import Rows
 
 _SETTINGS = settings(
     deadline=None,  # Spark calls are far too slow for Hypothesis's default deadline

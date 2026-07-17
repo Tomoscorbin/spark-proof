@@ -1,54 +1,76 @@
 # Spark Proof
 
-Spark Proof is a property based testing toolkit for PySpark. It wraps Hypothesis so that you can generate varied test DataFrames to use in your tests.
+Spark Proof is a property-based testing toolkit for PySpark. It wraps
+[Hypothesis](https://hypothesis.readthedocs.io/) so your pytest tests receive
+generated Spark DataFrames with explicit schemas — and when a test fails,
+Hypothesis shrinks the input to a minimal failing example you can read.
 
-Working with data at scale makes it impossible to reason about every possible input manually. with property-based testing, instead of writing a few specific examples, you describe the high-level rules your pipeline must respect. Spark Proof generates many random examples, automatically shrinks any failing case to the smallest counter example, and makes it straightforward to replay and debug the issue.
+> **Status: early development.** The API below is the complete current
+> surface. Strings, dates, decimals, nullability, and more generators are
+> planned; see the roadmap note at the bottom.
 
-### Key features
-
-- **Purpose built generators for Spark types.** Use helpers such as `integer`, `decimal`, `date`, and `string_from_regex` to produce realistic test data.
-- **Automatic DataFrame construction.** The `@data_frame` decorator builds Spark DataFrames from your schema definition, reducing boilerplate..
-- **Minimal pytest setup.** Point the decorator at your SparkSession fixture (defaults to `spark`) and Spark Proof will resolve it, populate a DataFrame, and hand it to your test function.
-- **Scalable randomness.** Configure the maximum row count for each test. Hypothesis explores the space for you, from empty DataFrames through to dense samples.
-- **Actionable failures.** Hypothesis shrinking and tracing notes ensure that failing inputs are small, repeatable, and easy to debug.
-
-For more on how property-based testing applies to ETL and data pipelines,
-see [Property-Based Testing for Data Pipelines](docs/pbt_for_data_pipelines.md).
-
-## Example test
-
-Below is a test that verifies a transformation never produces duplicate customer records. The decorator handles DataFrame creation while you assert the property you care about.
+## Example
 
 ```python
 import spark_proof as sp
 
-@sp.data_frame(
-    schema={
-        "customer_id": sp.integer(min_value=1, max_value=1_000_000),
-        "signup_date": sp.date(),
-        "email": sp.string(min_size=5, max_size=120),
-    },
-)
-def test_customer_pipeline_enforces_unique_ids(df):
-    result = transform_customers(df)  # your pipeline code under test
 
-    sp.assert_one_row_per_key(result, ["customer_id"])
+@sp.data_frame(
+    columns={
+        "customer_id": sp.integer(min_value=1, max_value=1_000_000),
+        "score": sp.integer(min_value=0, max_value=100),
+    },
+    min_rows=0,
+    max_rows=50,
+)
+def test_scores_never_exceed_bounds(df):
+    result = normalise_scores(df)  # your pipeline code under test
+
+    assert result.filter(result.score > 100).count() == 0
 ```
 
-When the property fails Hypothesis prints the smallest counter example and the generated rows so that you can reproduce the bug.
+Each test run explores many generated DataFrames — including the empty
+one — and any failure is reported with the shrunk minimal rows that
+caused it.
 
-## Generating data sets
+## Current API
 
-- Control numeric bounds with `integer`, `short`, `long`, `float32`, `double`, and `decimal`. Spark Proof validates the limits so you stay within each Spark type window.
-- Produce date and timestamp ranges that honour Spark constraints.
-- Generate text with either length bounds through `string` or pattern based content with `string_from_regex`.
-- Compose generators into nested dictionaries to model realistic schemas for wide tables.
+- `sp.integer(min_value=None, max_value=None)` — values for a Spark
+  `IntegerType` column. Bounds are validated against the 32-bit signed
+  domain up front, with errors that name the offending argument.
+- `@sp.data_frame(columns=..., min_rows=0, max_rows=50, spark_fixture="spark")`
+  — decorates a pytest test. `columns` maps column names to generators;
+  column order is preserved in the schema. The generated DataFrame is
+  passed as the test's first parameter; other pytest fixtures keep
+  working as normal.
+
+## pytest setup
+
+Spark Proof resolves your `SparkSession` from a pytest fixture (named
+`spark` by default — override with `spark_fixture="my_fixture"`):
+
+```python
+import pytest
+from pyspark.sql import SparkSession
 
 
-## Integration with pytest and Spark
+@pytest.fixture(scope="session")
+def spark():
+    session = SparkSession.builder.master("local[1]").getOrCreate()
+    yield session
+    session.stop()
+```
 
-Spark Proof expects a pytest fixture that returns a `SparkSession`. By default the `@data_frame` decorator looks for a fixture named `spark`, but you can change that by passing `session="another_fixture"`.
+## Background
 
-## Assertions and helpers
+For more on how property-based testing applies to ETL and data
+pipelines, see
+[Property-Based Testing for Data Pipelines](docs/pbt_for_data_pipelines.md).
 
-In addition to generators, Spark Proof has focused assertions that capture common data quality checks. For example, `assert_one_row_per_key` groups by the supplied key columns and fails when duplicates slip through. These helpers make it easy to express invariants right next to your transformations.
+## Roadmap
+
+In rough order: the remaining scalar generators (`long`, `short`,
+`double`, `decimal`, `date`, `timestamp`, …), nullability, first-class
+string generation (length/alphabet bounds, regex, email, UUID), explicit
+value choices and constants, and a custom-Hypothesis-strategy escape
+hatch.

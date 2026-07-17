@@ -10,3 +10,9 @@ __pycache__/
 
 # Codex
 AGENTS.md
+
+# Virtualenv
+.venv/
+
+# Superpowers planning artifacts
+docs/superpowers/

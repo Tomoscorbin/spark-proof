@@ -13,3 +13,6 @@ AGENTS.md
 
 # Virtualenv
 .venv/
+
+# Superpowers planning artifacts
+docs/superpowers/
